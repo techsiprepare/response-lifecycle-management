@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento</title>
+    <?!= include('Styles'); ?>
+</head>
+
+<body>
+
+    <div id="app">
+        <!-- Indicador Inicial de Carregamento -->
+        <div id="main-loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Carregando dados da triagem...</p>
+        </div>
+    </div>
+
+    <?!= include('Config'); ?>
+    <?!= include('Components'); ?>
+    <?!= include('ModalService'); ?>
+    <?!= include('Data'); ?>
+    <?!= include('App'); ?>
+
+</body>
+
+</html>

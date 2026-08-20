@@ -1,0 +1,127 @@
+<script>
+    window.AppData = {
+        state: {
+            activeTab: 'triagem',
+            tickets: [],
+            selectedTicket: null,
+            provasIds: [],
+            allTicketsCache: null,
+            searchQuery: ''
+        },
+
+        runScript: function (functionName, args, onSuccess, onError) {
+            let runner = google.script.run
+                .withSuccessHandler((response) => {
+                    if (response && response.success) {
+                        if (onSuccess) onSuccess(response.data, response.message);
+                    } else {
+                        const errMsg = response ? response.message : 'Erro desconhecido no servidor.';
+                        if (onError) onError(new Error(errMsg));
+                    }
+                })
+                .withFailureHandler((err) => {
+                    if (onError) onError(err);
+                });
+
+            runner[functionName].apply(runner, args);
+        },
+
+        fetchTickets: function (onSuccess, onError) {
+            this.runScript('getTicketsTriagem', [this.state.activeTab], (data) => {
+                this.state.tickets = data;
+                if (onSuccess) onSuccess(data);
+            }, onError);
+        },
+
+        fetchAllTickets: function (onSuccess, onError) {
+            if (this.state.allTicketsCache && this.state.allTicketsCache.length > 0) {
+                if (onSuccess) onSuccess(this.state.allTicketsCache);
+                return;
+            }
+            this.runScript('getTicketsTriagem', ['todos'], (data) => {
+                this.state.allTicketsCache = data;
+                if (onSuccess) onSuccess(data);
+            }, onError);
+        },
+
+        fetchProvasIds: function (onSuccess, onError) {
+            if (this.state.provasIds.length > 0) {
+                if (onSuccess) onSuccess(this.state.provasIds);
+                return;
+            }
+            this.runScript('getProvasEnadeIds', [], (data) => {
+                this.state.provasIds = data;
+                if (onSuccess) onSuccess(data);
+            }, onError);
+        },
+
+        salvarIdProva: function (ticket, novoId, onSuccess, onError) {
+            this.runScript('salvarNovoIdProva', [ticket.rowIndex, novoId], (data, message) => {
+                ticket.idProva = novoId;
+                if (onSuccess) onSuccess(message);
+            }, onError);
+        },
+
+        concluirTriagem: function (ticket, onSuccess, onError) {
+            this.runScript('alterarStatusTicket', [ticket.rowIndex, 'Pronto p/ Análise'], (data, message) => {
+                this.state.tickets = this.state.tickets.filter(t => t.ticket !== ticket.ticket);
+                if (onSuccess) onSuccess(message);
+            }, onError);
+        },
+
+        salvarAnalise: function (ticket, novoStatus, responsavel, motivo, onSuccess, onError) {
+            if (typeof motivo === 'function') {
+                onError = onSuccess;
+                onSuccess = motivo;
+                motivo = undefined;
+            }
+            this.runScript('atualizarDadosAnalise', [ticket.rowIndex, novoStatus, responsavel, motivo], (data, message) => {
+                if (novoStatus) ticket.status = novoStatus;
+                if (responsavel !== undefined) ticket.responsavel = responsavel;
+                if (motivo !== undefined) ticket.motivo = motivo;
+
+                // Remove o ticket da lista se o novo status não pertence à aba atual
+                const statusDaAba = {
+                    'triagem': ['Novo'],
+                    'pronto_analise': ['Pronto p/ Análise'],
+                    'em_analise': ['Em análise'],
+                    'pronto_reanalise': ['Pronto p/ Reanálise'],
+                    'devolvidos': ['Devolvido para ajustes'],
+                    'aprovados': ['Aprovado'],
+                    'rejeitados': ['Rejeitado']
+                };
+                const statusPermitidos = statusDaAba[this.state.activeTab] || [];
+                if (novoStatus && !statusPermitidos.includes(novoStatus)) {
+                    this.state.tickets = this.state.tickets.filter(t => t.ticket !== ticket.ticket);
+                }
+
+                if (onSuccess) onSuccess(message);
+            }, onError);
+        },
+
+        salvarUrlVideoOficial: function (ticket, urlOficial, onSuccess, onError) {
+            this.runScript('salvarUrlVideoOficial', [ticket.rowIndex, urlOficial], (data, message) => {
+                ticket.urlOficial = urlOficial;
+                if (onSuccess) onSuccess(message);
+            }, onError);
+        },
+
+        obterUrlsTicket: function (rowIndex, onSuccess, onError) {
+            this.runScript('obterStatusUrlsTicket', [rowIndex], onSuccess, onError);
+        },
+
+        gerarRascunhoEmail: function (rowIndex, modo, emailProfessor, tipoEscolha, onSuccess, onError) {
+            this.runScript('processarEscolhaUrl', [modo, emailProfessor, tipoEscolha, rowIndex], onSuccess, onError);
+        },
+
+        fetchFilaMesmaQuestao: function (ticket, onSuccess, onError) {
+            this.runScript('getFilaMesmaQuestao', [
+                ticket.idProva,
+                ticket.questaoNum,
+                ticket.tipo,
+                ticket.idResposta,
+                ticket.rowIndex
+            ], onSuccess, onError);
+        }
+    };
+</script>
