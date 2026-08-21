@@ -395,4 +395,4 @@ function getFilaMesmaQuestao(idProva, questaoNum, tipo, idRespostaAtual, rowInde
     Logger.log("Erro em getFilaMesmaQuestao: " + error.toString());
     return createResponse(false, null, error.message);
   }
-}
+}
