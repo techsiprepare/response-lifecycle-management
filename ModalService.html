@@ -262,11 +262,65 @@
                             </div>
                         </div>
                         <div class="fila-card-body" style="margin-top: 4px;">
-                            ${item.descricao ? `<div style="font-size: 0.85rem; color: #4a5568; font-style: italic; margin-top: 2px;"><strong>Descrição:</strong> ${item.descricao}</div>` : ''}
+                            ${item.descricao
+                        ? `<div style="font-size: 0.85rem; color: #4a5568; font-style: italic; margin-top: 2px;"><strong>Descrição:</strong> ${item.descricao}</div>`
+                        : `<div style="font-size: 0.85rem; color: #718096; font-style: italic; margin-top: 2px;"><strong>Descrição:</strong> Este foi o primeiro vídeo enviado.</div>`
+                    }
                         </div>
                         <div class="fila-card-footer" style="margin-top: 6px; display: flex; justify-content: flex-end;">
                             <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="font-size:0.75rem; padding:4px 8px;">
                                 Abrir Vídeo
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const btnsHtml = `
+                <div class="fila-container-scroll" style="max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-top: 8px; padding-right: 4px;">
+                    ${cardsHtml}
+                </div>
+            `;
+
+            const modalElem = document.getElementById('url-modal');
+            if (modalElem) modalElem.style.maxWidth = '500px';
+
+            this.abrir(titulo, desc, btnsHtml);
+        },
+
+        // Abre modal listando todas as autorizações do ticket (original e reenvios)
+        abrirAutorizacoesTicketModal: function (ticket, autorizacoes) {
+            this.init();
+            const alertBox = document.getElementById('url-modal-conclusao-alert');
+            if (alertBox) alertBox.style.display = 'none';
+
+            const titulo = `Autorizações do Ticket ${ticket.ticket}`;
+            const desc = `Histórico de autorizações enviadas para este ticket, ordenadas por data/hora:`;
+
+            const cardsHtml = autorizacoes.map(item => {
+                const isOriginal = item.tipo === 'Original';
+                const labelColor = isOriginal ? '#276749' : '#d69e2e';
+                const labelBg = isOriginal ? '#f0fff4' : '#fefcbf';
+
+                return `
+                    <div class="fila-card" style="border-left: 4px solid ${isOriginal ? '#38a169' : '#dd6b20'};">
+                        <div class="fila-card-header">
+                            <div>
+                                <span class="badge" style="background-color: ${labelBg}; color: ${labelColor}; font-weight: bold; margin-right: 6px;">
+                                    ${item.tipo}
+                                </span>
+                                <span class="fila-card-date">${item.dataHora}</span>
+                            </div>
+                        </div>
+                        <div class="fila-card-body" style="margin-top: 4px;">
+                            ${item.descricao
+                        ? `<div style="font-size: 0.85rem; color: #4a5568; font-style: italic; margin-top: 2px;"><strong>Descrição:</strong> ${item.descricao}</div>`
+                        : `<div style="font-size: 0.85rem; color: #718096; font-style: italic; margin-top: 2px;"><strong>Descrição:</strong> Esta foi a primeira autorização enviada.</div>`
+                    }
+                        </div>
+                        <div class="fila-card-footer" style="margin-top: 6px; display: flex; justify-content: flex-end;">
+                            <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="font-size:0.75rem; padding:4px 8px;">
+                                Abrir Autorização
                             </a>
                         </div>
                     </div>

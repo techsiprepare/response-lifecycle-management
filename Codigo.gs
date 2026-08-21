@@ -94,7 +94,8 @@ function getTicketsTriagem(statusFiltro) {
       motivo: headers.indexOf('Motivo'),
       responsavel: headers.indexOf('Responsável'),
       verQuestao: headers.indexOf('Ver_Questão_Site'),
-      autorizacao: headers.indexOf('Autorização')
+      autorizacao: headers.indexOf('Autorização'),
+      autorizacaoAtualizada: headers.indexOf('Autorização Atualizada')
     };
 
     const tickets = [];
@@ -145,7 +146,8 @@ function getTicketsTriagem(statusFiltro) {
           responsavel: row[map.responsavel] || '',
           verQuestaoUrl: row[map.verQuestao] || '',
           dataHora: map.dataHora !== -1 ? formatarDataExcel(row[map.dataHora]) : '',
-          autorizacao: map.autorizacao !== -1 ? (row[map.autorizacao] || '') : ''
+          autorizacao: map.autorizacao !== -1 ? (row[map.autorizacao] || '') : '',
+          autorizacaoAtualizada: map.autorizacaoAtualizada !== -1 ? (row[map.autorizacaoAtualizada] || '') : ''
         });
       }
     }
@@ -477,6 +479,92 @@ function getVideosTicket(ticketId, rowIndex) {
     return createResponse(true, videos);
   } catch (error) {
     Logger.log("Erro em getVideosTicket: " + error.toString());
+    return createResponse(false, null, error.message);
+  }
+}
+
+/**
+ * Obtém todas as autorizações (original e reenvios) vinculadas a um ticket.
+ */
+function getAutorizacoesTicket(ticketId, rowIndex) {
+  try {
+    const ss = getSpreadsheet();
+    const sheetManagement = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.GERENCIAMENTO);
+    if (!sheetManagement) throw new Error('Aba de gerenciamento não encontrada.');
+
+    // 1. Obter autorização original do gerenciamento
+    const headersManagement = sheetManagement.getRange(1, 1, 1, sheetManagement.getLastColumn()).getValues()[0];
+    const idxAutorizacao = headersManagement.indexOf('Autorização');
+    const idxDataHora = headersManagement.indexOf('Data/Hora');
+
+    let originalUrl = '';
+    let originalDataHora = '';
+    let originalTs = 0;
+
+    if (idxAutorizacao !== -1) {
+      originalUrl = String(sheetManagement.getRange(rowIndex, idxAutorizacao + 1).getValue() || '').trim();
+    }
+    if (idxDataHora !== -1) {
+      const dateVal = sheetManagement.getRange(rowIndex, idxDataHora + 1).getValue();
+      originalDataHora = formatarDataExcel(dateVal);
+      originalTs = dateVal instanceof Date ? dateVal.getTime() : new Date(dateVal).getTime();
+    }
+
+    const autorizacoes = [];
+    if (originalUrl && /^https?:\/\//i.test(originalUrl)) {
+      autorizacoes.push({
+        tipo: 'Original',
+        url: originalUrl,
+        dataHora: originalDataHora || 'Sem data',
+        ts: isNaN(originalTs) ? 0 : originalTs,
+        descricao: ''
+      });
+    }
+
+    // 2. Buscar autorizações atualizadas na aba Reenvios
+    const sheetReenvios = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REENVIOS);
+    if (sheetReenvios) {
+      const dataReenvios = sheetReenvios.getDataRange().getValues();
+      if (dataReenvios.length > 1) {
+        const headersReenvios = dataReenvios[0].map(h => String(h).trim());
+        const mapReenvios = {
+          dataHora: headersReenvios.indexOf('Carimbo de data/hora'),
+          ticket: headersReenvios.indexOf('Ticket'),
+          autorizacao: headersReenvios.indexOf('Autorização Atualizada'),
+          descricao: headersReenvios.indexOf('Descrição')
+        };
+
+        const targetTicket = String(ticketId).trim().toUpperCase();
+
+        for (let i = 1; i < dataReenvios.length; i++) {
+          const row = dataReenvios[i];
+          const ticketVal = mapReenvios.ticket !== -1 ? String(row[mapReenvios.ticket]).trim().toUpperCase() : '';
+
+          if (ticketVal === targetTicket) {
+            const urlVal = mapReenvios.autorizacao !== -1 ? String(row[mapReenvios.autorizacao]).trim() : '';
+            if (urlVal && /^https?:\/\//i.test(urlVal)) {
+              const dateVal = mapReenvios.dataHora !== -1 ? row[mapReenvios.dataHora] : '';
+              const rowTs = dateVal instanceof Date ? dateVal.getTime() : new Date(dateVal).getTime();
+
+              autorizacoes.push({
+                tipo: 'Reenvio',
+                url: urlVal,
+                dataHora: formatarDataExcel(dateVal),
+                ts: isNaN(rowTs) ? 0 : rowTs,
+                descricao: mapReenvios.descricao !== -1 ? row[mapReenvios.descricao] : ''
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Ordenar por data/hora (mais antigos primeiro)
+    autorizacoes.sort((a, b) => a.ts - b.ts);
+
+    return createResponse(true, autorizacoes);
+  } catch (error) {
+    Logger.log("Erro em getAutorizacoesTicket: " + error.toString());
     return createResponse(false, null, error.message);
   }
 }

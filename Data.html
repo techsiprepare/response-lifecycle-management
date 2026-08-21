@@ -125,6 +125,10 @@
 
         fetchVideosTicket: function (ticketId, rowIndex, onSuccess, onError) {
             this.runScript('getVideosTicket', [ticketId, rowIndex], onSuccess, onError);
+        },
+
+        fetchAutorizacoesTicket: function (ticketId, rowIndex, onSuccess, onError) {
+            this.runScript('getAutorizacoesTicket', [ticketId, rowIndex], onSuccess, onError);
         }
     };
 </script>

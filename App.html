@@ -149,6 +149,22 @@
                 });
             }
 
+            const btnVerAutorizacaoModal = document.getElementById('btn-ver-autorizacao-modal');
+            if (btnVerAutorizacaoModal) {
+                btnVerAutorizacaoModal.addEventListener('click', () => {
+                    ModalService.abrir('Autorizações do Ticket ' + ticket.ticket, 'Carregando autorizações...', '<p style="color:#666; font-size:0.9em;">Aguarde...</p>');
+                    Data.fetchAutorizacoesTicket(ticket.ticket, ticket.rowIndex, (autorizacoes) => {
+                        ModalService.abrirAutorizacoesTicketModal(ticket, autorizacoes);
+                    }, (err) => {
+                        ModalService.exibirResultado({
+                            sucesso: false,
+                            mensagem: '❌ Erro ao buscar autorizações: ' + err.message,
+                            ticket: ticket.ticket
+                        });
+                    });
+                });
+            }
+
             // Busca sob demanda se existem tickets anteriores para a mesma questão
             const containerFila = document.getElementById('container-fila-questao');
             if (containerFila) {
