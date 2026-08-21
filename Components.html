@@ -200,7 +200,7 @@
                     ${containerFila}
                     ${this.BaseDetails(ticket)}
 
-                    <div style="display: flex; gap: 8px; margin-bottom: 12px; width: 100%;">
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; width: 100%;">
                         <div style="flex: 1;">
                             ${temVideoValido ? `
                                 <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
@@ -215,6 +215,8 @@
                                 </button>
                             ` : '<span class="detail-label" style="color:red; text-align:center; display:block; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">Autorização indisponível</span>'}
                         </div>
+                        <button id="btn-enviar-barema-aluno" class="btn btn-primary">Enviar Barema para Aluno</button>
+                        <button id="btn-solicitar-professor" class="btn btn-primary">Solicitar Avaliação p/ Professor</button>
                     </div>
 
                     <div class="actions-group">
@@ -222,8 +224,6 @@
                         <button id="btn-devolver-ajustes" class="btn btn-warning">Devolver p/ Ajustes</button>
                         <button id="btn-rejeitado" class="btn btn-secondary" style="background-color:#fed7d7; color:#9b2c2c;">Rejeitar Ticket</button>
                         <button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button>
-                        <button id="btn-enviar-barema-aluno" class="btn btn-primary">Enviar Barema para Aluno</button>
-                        <button id="btn-solicitar-professor" class="btn btn-primary">Solicitar Avaliação p/ Professor</button>
                     </div>
                 `;
             }
