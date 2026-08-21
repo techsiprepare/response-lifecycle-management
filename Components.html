@@ -117,6 +117,31 @@
             `;
         },
 
+        BaseDetails: function (ticket) {
+            return `
+                <div class="detail-group">
+                    <span class="detail-label">Aluno</span>
+                    <span class="detail-value">${ticket.nomeAluno}</span>
+                </div>
+                <div class="detail-group">
+                    <span class="detail-label">Assunto / Questão</span>
+                    <span class="detail-value">${ticket.assunto || '-'} (Qst ${ticket.questaoNum || '-'})</span>
+                </div>
+                <div class="detail-group">
+                    <span class="detail-label">Prova</span>
+                    <span class="detail-value">${ticket.idProva || '<em>Sem Prova Vinc.</em>'}</span>
+                </div>
+                <div class="detail-group">
+                    <span class="detail-label">Responsável</span>
+                    <span class="detail-value">${ticket.responsavel || '<em>Sem Responsável</em>'}</span>
+                </div>
+                <div class="detail-group">
+                    <span class="detail-label">Data/Hora</span>
+                    <span class="detail-value">${ticket.dataHora}</span>
+                </div>
+            `;
+        },
+
         AsideContent: function (ticket, activeTab) {
             const isValido = ticket.preCuradoria && ticket.preCuradoria.includes('✅');
             const preCuradoriaColor = isValido ? '#2f855a' : '#c53030';
@@ -132,10 +157,7 @@
             if (activeTab === 'triagem') {
                 return `
                     ${containerFila}
-                    <div class="detail-group">
-                        <span class="detail-label">Aluno</span>
-                        <span class="detail-value">${ticket.nomeAluno}</span>
-                    </div>
+                    ${this.BaseDetails(ticket)}
                     <div class="detail-group">
                         <span class="detail-label">Assunto Principal</span>
                         <span class="detail-value">${ticket.assunto || 'Não informado'}</span>
@@ -176,22 +198,7 @@
             if (activeTab === 'em_analise') {
                 return `
                     ${containerFila}
-                    <div class="detail-group">
-                        <span class="detail-label">Aluno</span>
-                        <span class="detail-value">${ticket.nomeAluno}</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Assunto / Questão</span>
-                        <span class="detail-value">${ticket.assunto || '-'} (Qst ${ticket.questaoNum || '-'})</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Prova</span>
-                        <span class="detail-value">${ticket.idProva || '<em>Sem Prova Vinc.</em>'}</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Responsável</span>
-                        <span class="detail-value">${ticket.responsavel || '<em>Sem Responsável</em>'}</span>
-                    </div>
+                    ${this.BaseDetails(ticket)}
 
                     <div style="display: flex; gap: 8px; margin-bottom: 12px; width: 100%;">
                         <div style="flex: 1;">
@@ -226,22 +233,7 @@
                 const gmailUrl = 'https://mail.google.com/mail/#search/' + encodeURIComponent(ticket.ticket);
                 return `
                     ${containerFila}
-                    <div class="detail-group">
-                        <span class="detail-label">Aluno</span>
-                        <span class="detail-value">${ticket.nomeAluno}</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Assunto / Questão</span>
-                        <span class="detail-value">${ticket.assunto || '-'} (Qst ${ticket.questaoNum || '-'})</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Prova</span>
-                        <span class="detail-value">${ticket.idProva || '<em>Sem Prova Vinc.</em>'}</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Responsável</span>
-                        <span class="detail-value">${ticket.responsavel || '<em>Sem Responsável</em>'}</span>
-                    </div>
+                    ${this.BaseDetails(ticket)}
 
                     <div class="actions-group">
                         ${temVideoValido ? `
@@ -262,22 +254,7 @@
             if (activeTab === 'aprovados') {
                 return `
                     ${containerFila}
-                    <div class="detail-group">
-                        <span class="detail-label">Aluno</span>
-                        <span class="detail-value">${ticket.nomeAluno}</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Assunto / Questão</span>
-                        <span class="detail-value">${ticket.assunto || '-'} (Qst ${ticket.questaoNum || '-'})</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Prova</span>
-                        <span class="detail-value">${ticket.idProva || '<em>Sem Prova Vinc.</em>'}</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Responsável</span>
-                        <span class="detail-value">${ticket.responsavel || '<em>Sem Responsável</em>'}</span>
-                    </div>
+                    ${this.BaseDetails(ticket)}
 
                     <div class="module-box">
                         <span class="detail-label">URL do Vídeo Oficial (Publicado)</span>
@@ -301,22 +278,7 @@
             if (activeTab === 'rejeitados') {
                 return `
                     ${containerFila}
-                    <div class="detail-group">
-                        <span class="detail-label">Aluno</span>
-                        <span class="detail-value">${ticket.nomeAluno}</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Assunto / Questão</span>
-                        <span class="detail-value">${ticket.assunto || '-'} (Qst ${ticket.questaoNum || '-'})</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Prova</span>
-                        <span class="detail-value">${ticket.idProva || '<em>Sem Prova Vinc.</em>'}</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Responsável</span>
-                        <span class="detail-value">${ticket.responsavel || '<em>Sem Responsável</em>'}</span>
-                    </div>
+                    ${this.BaseDetails(ticket)}
                     <div class="detail-group">
                         <span class="detail-label">Motivo da Rejeição</span>
                         <span class="detail-value" style="color:#c53030;">${ticket.motivo || 'Não informado'}</span>
@@ -337,14 +299,7 @@
             // Layout para a aba Pronto p/ Análise (e Pronto p/ Reanálise)
             return `
                 ${containerFila}
-                <div class="detail-group">
-                    <span class="detail-label">Aluno</span>
-                    <span class="detail-value">${ticket.nomeAluno}</span>
-                </div>
-                <div class="detail-group">
-                    <span class="detail-label">Assunto / Questão</span>
-                    <span class="detail-value">${ticket.assunto || '-'} (Qst ${ticket.questaoNum || '-'})</span>
-                </div>
+                ${this.BaseDetails(ticket)}
 
                 <div class="module-box">
                     <label class="detail-label">Responsável</label>
