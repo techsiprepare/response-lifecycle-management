@@ -79,7 +79,7 @@ function getTicketsTriagem(statusFiltro) {
     const headers = data[0].map(h => String(h).trim());
     
     const map = {
-      idResposta: headers.indexOf('ID_Resposta'),
+      dataHora: headers.indexOf('Data/Hora'),
       ticket: headers.indexOf('Ticket'),
       idProva: headers.indexOf('ID_Prova'),
       questaoNum: headers.indexOf('Questao_Num'),
@@ -93,7 +93,8 @@ function getTicketsTriagem(statusFiltro) {
       status: headers.indexOf('Status'),
       motivo: headers.indexOf('Motivo'),
       responsavel: headers.indexOf('Responsável'),
-      verQuestao: headers.indexOf('Ver_Questão_Site')
+      verQuestao: headers.indexOf('Ver_Questão_Site'),
+      autorizacao: headers.indexOf('Autorização')
     };
 
     const tickets = [];
@@ -129,7 +130,7 @@ function getTicketsTriagem(statusFiltro) {
 
         tickets.push({
           rowIndex: i + 1,
-          idResposta: row[map.idResposta] || '',
+          idResposta: '',
           ticket: row[map.ticket] || `#TK-${i}`,
           idProva: row[map.idProva] || '',
           questaoNum: row[map.questaoNum] || '',
@@ -142,7 +143,9 @@ function getTicketsTriagem(statusFiltro) {
           status: currentStatus,
           motivo: row[map.motivo] || '',
           responsavel: row[map.responsavel] || '',
-          verQuestaoUrl: row[map.verQuestao] || ''
+          verQuestaoUrl: row[map.verQuestao] || '',
+          dataHora: map.dataHora !== -1 ? formatarDataExcel(row[map.dataHora]) : '',
+          autorizacao: map.autorizacao !== -1 ? (row[map.autorizacao] || '') : ''
         });
       }
     }
@@ -278,32 +281,21 @@ function salvarUrlVideoOficial(rowIndex, urlOficial) {
 }
 
 /**
- * Extrai a data/hora e o timestamp numérico a partir do ID_Resposta (formato YYYYMMDD_HHMMSS_RA).
+ * Formata um objeto Date ou valor do Google Sheets em formato de data legível.
  */
-function extrairTimestampIdResposta(idResposta) {
-  if (!idResposta) return null;
-  const str = String(idResposta).trim();
-  const match = str.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})/);
-  if (!match) return null;
-
-  const year = match[1];
-  const month = match[2];
-  const day = match[3];
-  const hour = match[4];
-  const minute = match[5];
-  const second = match[6];
-
-  const numValue = Number(`${year}${month}${day}${hour}${minute}${second}`);
-  const dataFormatada = `${day}/${month}/${year} ${hour}:${minute}:${second}`;
-
-  return { numValue, dataFormatada };
+function formatarDataExcel(valorData) {
+  if (!valorData) return '';
+  if (valorData instanceof Date) {
+    return Utilities.formatDate(valorData, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss');
+  }
+  return String(valorData);
 }
 
 /**
  * Obtém a fila de tickets anteriores para a mesma questão (ID_Prova, Questao_Num, Tipo)
  * que possuem datas/timestamps estritamente inferiores ao ticket informado.
  */
-function getFilaMesmaQuestao(idProva, questaoNum, tipo, idRespostaAtual, rowIndexAtual) {
+function getFilaMesmaQuestao(idProva, questaoNum, tipo, rowIndexAtual) {
   try {
     const ss = getSpreadsheet();
     const sheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.GERENCIAMENTO);
@@ -312,13 +304,10 @@ function getFilaMesmaQuestao(idProva, questaoNum, tipo, idRespostaAtual, rowInde
     const data = sheet.getDataRange().getValues();
     if (data.length <= 1) return createResponse(true, []);
 
-    const currentTs = extrairTimestampIdResposta(idRespostaAtual);
-    if (!currentTs) return createResponse(true, []);
-
     const headers = data[0].map(h => String(h).trim());
 
     const map = {
-      idResposta: headers.indexOf('ID_Resposta'),
+      dataHora: headers.indexOf('Data/Hora'),
       ticket: headers.indexOf('Ticket'),
       idProva: headers.indexOf('ID_Prova'),
       questaoNum: headers.indexOf('Questao_Num'),
@@ -333,6 +322,14 @@ function getFilaMesmaQuestao(idProva, questaoNum, tipo, idRespostaAtual, rowInde
       responsavel: headers.indexOf('Responsável')
     };
 
+    if (map.dataHora === -1) throw new Error('Coluna "Data/Hora" não encontrada.');
+
+    // Obter data/hora da linha atual
+    const currentDataHoraVal = data[rowIndexAtual - 1][map.dataHora];
+    if (!currentDataHoraVal) return createResponse(true, []);
+    const currentTs = currentDataHoraVal instanceof Date ? currentDataHoraVal.getTime() : new Date(currentDataHoraVal).getTime();
+    if (isNaN(currentTs)) return createResponse(true, []);
+
     const norm = str => String(str || '').trim().toUpperCase();
     const targetProva = norm(idProva);
     const targetQuestao = norm(questaoNum);
@@ -343,10 +340,9 @@ function getFilaMesmaQuestao(idProva, questaoNum, tipo, idRespostaAtual, rowInde
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       const rIndex = i + 1;
-      const rIdResposta = row[map.idResposta] ? String(row[map.idResposta]).trim() : '';
 
       // Descarta o próprio ticket
-      if (rIndex === Number(rowIndexAtual) || (rIdResposta && rIdResposta === String(idRespostaAtual).trim())) {
+      if (rIndex === Number(rowIndexAtual)) {
         continue;
       }
 
@@ -356,10 +352,13 @@ function getFilaMesmaQuestao(idProva, questaoNum, tipo, idRespostaAtual, rowInde
 
       // Verifica se é exatamente a mesma questão
       if (norm(rIdProva) === targetProva && norm(rQuestaoNum) === targetQuestao && norm(rTipo) === targetTipo) {
-        const rowTs = extrairTimestampIdResposta(rIdResposta);
+        const rowDataHora = row[map.dataHora];
+        if (!rowDataHora) continue;
+        const rowTs = rowDataHora instanceof Date ? rowDataHora.getTime() : new Date(rowDataHora).getTime();
+        if (isNaN(rowTs)) continue;
 
-        // Somente se possuir data extraída via ID_Resposta E a data for inferior
-        if (rowTs && rowTs.numValue < currentTs.numValue) {
+        // Somente se possuir data inferior
+        if (rowTs < currentTs) {
           const rawStatus = map.status !== -1 && row[map.status] ? String(row[map.status]).trim() : '';
           const currentStatus = rawStatus === '' ? SYSTEM_CONFIG.STATUS.NOVO : rawStatus;
 
@@ -368,15 +367,14 @@ function getFilaMesmaQuestao(idProva, questaoNum, tipo, idRespostaAtual, rowInde
 
           fila.push({
             rowIndex: rIndex,
-            idResposta: rIdResposta,
             ticket: row[map.ticket] || `#TK-${rIndex}`,
             idProva: rIdProva,
             questaoNum: rQuestaoNum,
             tipo: rTipo,
             nomeAluno: row[map.nomeAluno] || 'Não informado',
             assunto: row[map.assunto] || '',
-            dataHora: rowTs.dataFormatada,
-            numValue: rowTs.numValue,
+            dataHora: formatarDataExcel(rowDataHora),
+            numValue: rowTs,
             videoUrl: extrairUrlVideoValida(rawUrlAtualizada, rawUrlOriginal),
             urlOficial: map.urlOficial !== -1 ? (row[map.urlOficial] || '') : '',
             status: currentStatus,
@@ -393,6 +391,92 @@ function getFilaMesmaQuestao(idProva, questaoNum, tipo, idRespostaAtual, rowInde
     return createResponse(true, fila);
   } catch (error) {
     Logger.log("Erro em getFilaMesmaQuestao: " + error.toString());
+    return createResponse(false, null, error.message);
+  }
+}
+
+/**
+ * Obtém todos os vídeos (originais e reenvios) vinculados a um ticket.
+ */
+function getVideosTicket(ticketId, rowIndex) {
+  try {
+    const ss = getSpreadsheet();
+    const sheetManagement = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.GERENCIAMENTO);
+    if (!sheetManagement) throw new Error('Aba de gerenciamento não encontrada.');
+
+    // 1. Obter vídeo original do gerenciamento
+    const headersManagement = sheetManagement.getRange(1, 1, 1, sheetManagement.getLastColumn()).getValues()[0];
+    const idxOriginal = headersManagement.indexOf('URL do Vídeo Original');
+    const idxDataHora = headersManagement.indexOf('Data/Hora');
+    
+    let originalUrl = '';
+    let originalDataHora = '';
+    let originalTs = 0;
+
+    if (idxOriginal !== -1) {
+      originalUrl = sheetManagement.getRange(rowIndex, idxOriginal + 1).getValue();
+    }
+    if (idxDataHora !== -1) {
+      const dateVal = sheetManagement.getRange(rowIndex, idxDataHora + 1).getValue();
+      originalDataHora = formatarDataExcel(dateVal);
+      originalTs = dateVal instanceof Date ? dateVal.getTime() : new Date(dateVal).getTime();
+    }
+
+    const videos = [];
+    if (originalUrl && /^https?:\/\//i.test(originalUrl)) {
+      videos.push({
+        tipo: 'Original',
+        url: originalUrl,
+        dataHora: originalDataHora || 'Sem data',
+        ts: isNaN(originalTs) ? 0 : originalTs,
+        descricao: ''
+      });
+    }
+
+    // 2. Buscar reenvios na aba Reenvios
+    const sheetReenvios = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REENVIOS);
+    if (sheetReenvios) {
+      const dataReenvios = sheetReenvios.getDataRange().getValues();
+      if (dataReenvios.length > 1) {
+        const headersReenvios = dataReenvios[0].map(h => String(h).trim());
+        const mapReenvios = {
+          dataHora: headersReenvios.indexOf('Carimbo de data/hora'),
+          ticket: headersReenvios.indexOf('Ticket'),
+          url: headersReenvios.indexOf('URL Atualizada'),
+          descricao: headersReenvios.indexOf('Descrição')
+        };
+
+        const targetTicket = String(ticketId).trim().toUpperCase();
+
+        for (let i = 1; i < dataReenvios.length; i++) {
+          const row = dataReenvios[i];
+          const ticketVal = mapReenvios.ticket !== -1 ? String(row[mapReenvios.ticket]).trim().toUpperCase() : '';
+          
+          if (ticketVal === targetTicket) {
+            const urlVal = mapReenvios.url !== -1 ? String(row[mapReenvios.url]).trim() : '';
+            if (urlVal && /^https?:\/\//i.test(urlVal)) {
+              const dateVal = mapReenvios.dataHora !== -1 ? row[mapReenvios.dataHora] : '';
+              const rowTs = dateVal instanceof Date ? dateVal.getTime() : new Date(dateVal).getTime();
+              
+              videos.push({
+                tipo: 'Reenvio',
+                url: urlVal,
+                dataHora: formatarDataExcel(dateVal),
+                ts: isNaN(rowTs) ? 0 : rowTs,
+                descricao: mapReenvios.descricao !== -1 ? row[mapReenvios.descricao] : ''
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Ordenar por data/hora (mais antigos primeiro)
+    videos.sort((a, b) => a.ts - b.ts);
+
+    return createResponse(true, videos);
+  } catch (error) {
+    Logger.log("Erro em getVideosTicket: " + error.toString());
     return createResponse(false, null, error.message);
   }
 }

@@ -119,9 +119,12 @@
                 ticket.idProva,
                 ticket.questaoNum,
                 ticket.tipo,
-                ticket.idResposta,
                 ticket.rowIndex
             ], onSuccess, onError);
+        },
+
+        fetchVideosTicket: function (ticketId, rowIndex, onSuccess, onError) {
+            this.runScript('getVideosTicket', [ticketId, rowIndex], onSuccess, onError);
         }
     };
 </script>

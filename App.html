@@ -133,6 +133,22 @@
         }
 
         function bindAsideActions(ticket) {
+            const btnVerVideosModal = document.getElementById('btn-ver-videos-modal');
+            if (btnVerVideosModal) {
+                btnVerVideosModal.addEventListener('click', () => {
+                    ModalService.abrir('Vídeos do Ticket ' + ticket.ticket, 'Carregando vídeos...', '<p style="color:#666; font-size:0.9em;">Aguarde...</p>');
+                    Data.fetchVideosTicket(ticket.ticket, ticket.rowIndex, (videos) => {
+                        ModalService.abrirVideosTicketModal(ticket, videos);
+                    }, (err) => {
+                        ModalService.exibirResultado({
+                            sucesso: false,
+                            mensagem: '❌ Erro ao buscar vídeos: ' + err.message,
+                            ticket: ticket.ticket
+                        });
+                    });
+                });
+            }
+
             // Busca sob demanda se existem tickets anteriores para a mesma questão
             const containerFila = document.getElementById('container-fila-questao');
             if (containerFila) {

@@ -124,6 +124,7 @@
 
             // Valida se a URL é um link acessível
             const temVideoValido = ticket.videoUrl && /^https?:\/\//i.test(ticket.videoUrl);
+            const temAutorizacaoValida = ticket.autorizacao && /^https?:\/\//i.test(ticket.autorizacao);
 
             const containerFila = `<div id="container-fila-questao"></div>`;
 
@@ -161,9 +162,9 @@
 
                     <div class="actions-group">
                         ${temVideoValido ? `
-                            <a href="${ticket.videoUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                            <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
                                 Ver Vídeo do Aluno
-                            </a>
+                            </button>
                         ` : '<span class="detail-label" style="color:red; text-align:center;">Vídeo indisponível</span>'}
                         
                         <button id="btn-pronto-analise" class="btn btn-success" data-id="${ticket.ticket}">Pronto p/ Análise</button>
@@ -192,13 +193,22 @@
                         <span class="detail-value">${ticket.responsavel || '<em>Sem Responsável</em>'}</span>
                     </div>
 
-                    ${temVideoValido ? `
-                        <div class="detail-group">
-                            <a href="${ticket.videoUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
-                                Ver Vídeo do Aluno
-                            </a>
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px; width: 100%;">
+                        <div style="flex: 1;">
+                            ${temVideoValido ? `
+                                <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
+                                    Ver Vídeo do Aluno
+                                </button>
+                            ` : '<span class="detail-label" style="color:red; text-align:center; display:block; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">Vídeo indisponível</span>'}
                         </div>
-                    ` : '<div class="detail-group"><span class="detail-label" style="color:red;">Vídeo indisponível</span></div>'}
+                        <div style="flex: 1;">
+                            ${temAutorizacaoValida ? `
+                                <a href="${ticket.autorizacao}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="width:100%; text-align:center; display:block; box-sizing:border-box;">
+                                    Ver Autorização
+                                </a>
+                            ` : '<span class="detail-label" style="color:red; text-align:center; display:block; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">Autorização indisponível</span>'}
+                        </div>
+                    </div>
 
                     <div class="actions-group">
                         <button id="btn-aprovar-ticket" class="btn btn-success">Aprovar Ticket</button>
@@ -235,9 +245,9 @@
 
                     <div class="actions-group">
                         ${temVideoValido ? `
-                            <a href="${ticket.videoUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                            <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
                                 Ver Vídeo do Aluno
-                            </a>
+                            </button>
                         ` : '<span class="detail-label" style="color:red; text-align:center;">Vídeo indisponível</span>'}
 
                         <a href="${gmailUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
@@ -277,9 +287,9 @@
 
                     <div class="actions-group">
                         ${temVideoValido ? `
-                            <a href="${ticket.videoUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                            <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
                                 Ver Vídeo do Aluno
-                            </a>
+                            </button>
                         ` : '<span class="detail-label" style="color:red; text-align:center;">Vídeo indisponível</span>'}
 
                         <button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button>
@@ -314,9 +324,9 @@
 
                     <div class="actions-group">
                         ${temVideoValido ? `
-                            <a href="${ticket.videoUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                            <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
                                 Ver Vídeo do Aluno
-                            </a>
+                            </button>
                         ` : '<span class="detail-label" style="color:red; text-align:center;">Vídeo indisponível</span>'}
 
                         <button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button>
@@ -346,9 +356,9 @@
 
                 <div class="actions-group">
                     ${temVideoValido ? `
-                        <a href="${ticket.videoUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                        <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
                             Ver Vídeo do Aluno
-                        </a>
+                        </button>
                     ` : '<span class="detail-label" style="color:red; text-align:center;">Vídeo indisponível</span>'}
                     
                     <button id="btn-em-analise" class="btn btn-primary">Mudar p/ Em análise</button>

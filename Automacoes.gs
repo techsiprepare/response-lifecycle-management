@@ -6,8 +6,7 @@
 
 const AUTOMACOES_CONFIG = {
   SHEETS: {
-    MANAGEMENT: 'Gerenciamento_Respostas',
-    FORM_RESPONSES: 'Form_Responses'
+    MANAGEMENT: 'Gerenciamento_Respostas'
   },
   URLS: {
     get FORM_REENVIO() { return getFormReenvioUrl(); },
@@ -44,50 +43,6 @@ function _automacoes_existeRascunhoPendente(ticket) {
     }
   }
   return false;
-}
-
-function _automacoes_buscarEmailsPorIdResposta(idResposta, ss) {
-  const sheetForm = ss.getSheetByName(AUTOMACOES_CONFIG.SHEETS.FORM_RESPONSES);
-  if (!sheetForm) return null;
-
-  const data = sheetForm.getDataRange().getValues();
-  const idStr = idResposta.toString().trim();
-  const partesId = idStr.split('_');
-  if (partesId.length < 3) return null;
-
-  const raProcurado = _automacoes_normalizarTexto(partesId[partesId.length - 1]);
-  const dataHoraIdStr = partesId[0] + '_' + partesId[1];
-
-  const candidatosPorRA = [];
-  for (let i = 1; i < data.length; i++) {
-    const raForm = _automacoes_normalizarTexto(data[i][5]);
-    if (raForm && raForm === raProcurado) {
-      candidatosPorRA.push({
-        padrao: data[i][1] ? data[i][1].toString().trim() : '',
-        institucional: data[i][2] ? data[i][2].toString().trim() : '',
-        rawDate: data[i][0]
-      });
-    }
-  }
-
-  if (candidatosPorRA.length === 0) return null;
-  if (candidatosPorRA.length === 1) {
-    return { padrao: candidatosPorRA[0].padrao, institucional: candidatosPorRA[0].institucional };
-  }
-
-  const timeZone = ss.getSpreadsheetTimeZone();
-  for (let j = 0; j < candidatosPorRA.length; j++) {
-    const cand = candidatosPorRA[j];
-    if (cand.rawDate) {
-      const dateObj = (cand.rawDate instanceof Date) ? cand.rawDate : new Date(cand.rawDate);
-      const formattedCandDate = Utilities.formatDate(dateObj, timeZone, 'yyyyMMdd_HHmmss');
-      if (formattedCandDate === dataHoraIdStr) {
-        return { padrao: cand.padrao, institucional: cand.institucional };
-      }
-    }
-  }
-
-  return null;
 }
 
 function _automacoes_obterTemplateCorpoEmailHtml(dados) {
@@ -186,7 +141,6 @@ function processarEscolhaUrl(modo, emailProfessor, tipoEscolha, rowIndex) {
     const idx = function(nome) { return headers.indexOf(nome); };
     const rowData = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
 
-    const idResposta  = rowData[idx('ID_Resposta')]   || '';
     const ticket      = rowData[idx('Ticket')]        || '';
     const idProva     = rowData[idx('ID_Prova')]      || '';
     const questaoNum  = rowData[idx('Questao_Num')]   || '';
@@ -197,8 +151,15 @@ function processarEscolhaUrl(modo, emailProfessor, tipoEscolha, rowIndex) {
     const urlVideoOriginal   = idx('URL do Vídeo Original') !== -1 ? (rowData[idx('URL do Vídeo Original')] || '').toString().trim() : '';
     const urlVideoAtualizada = idx('URL Atualizada')         !== -1 ? (rowData[idx('URL Atualizada')]        || '').toString().trim() : '';
 
-    if (!idResposta || !ticket) {
-      return { success: false, message: 'A linha não possui ID_Resposta ou Ticket preenchidos.' };
+    if (!ticket) {
+      return { success: false, message: 'A linha não possui Ticket preenchido.' };
+    }
+
+    const emailPessoal       = idx('Endereço de e-mail')   !== -1 ? (rowData[idx('Endereço de e-mail')]   || '').toString().trim() : '';
+    const emailInstitucional = idx('Email Institucional') !== -1 ? (rowData[idx('Email Institucional')] || '').toString().trim() : '';
+
+    if (!emailPessoal && !emailInstitucional) {
+      return { success: false, message: 'E-mails (pessoal e institucional) não encontrados na linha ' + rowIndex + '.' };
     }
 
     const ehAtualizada  = tipoEscolha === AUTOMACOES_CONFIG.ESCOLHAS.ATUALIZADA;
@@ -216,12 +177,7 @@ function processarEscolhaUrl(modo, emailProfessor, tipoEscolha, rowIndex) {
       return { success: false, message: 'Já existe um rascunho em andamento para o Ticket: ' + ticket + '. Finalize-o ou exclua-o no Gmail.' };
     }
 
-    const dadosEmail = _automacoes_buscarEmailsPorIdResposta(idResposta, ss);
-    if (!dadosEmail || (!dadosEmail.institucional && !dadosEmail.padrao)) {
-      return { success: false, message: 'E-mails não encontrados para o ID_Resposta (' + idResposta + ').' };
-    }
-
-    const emailsAlunoConcatenados = [dadosEmail.institucional, dadosEmail.padrao]
+    const emailsAlunoConcatenados = [emailInstitucional, emailPessoal]
       .filter(function(email, index, self) { return email && self.indexOf(email) === index; })
       .join(', ');
 
@@ -232,9 +188,9 @@ function processarEscolhaUrl(modo, emailProfessor, tipoEscolha, rowIndex) {
       emailPrincipal = emailProfessor || avaliador;
       emailCC = emailsAlunoConcatenados;
     } else {
-      emailPrincipal = dadosEmail.institucional || dadosEmail.padrao;
-      emailCC = (dadosEmail.institucional && dadosEmail.padrao && dadosEmail.institucional !== dadosEmail.padrao)
-        ? dadosEmail.padrao : '';
+      emailPrincipal = emailInstitucional || emailPessoal;
+      emailCC = (emailInstitucional && emailPessoal && emailInstitucional !== emailPessoal)
+        ? emailPessoal : '';
     }
 
     const dataAtual = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy');
