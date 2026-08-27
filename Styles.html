@@ -317,13 +317,26 @@
     }
 
     .module-box {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 12px;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 12px;
         display: flex;
         flex-direction: column;
         gap: 10px;
+    }
+
+    /* Grupo de Input + Ação: agrupa input e botão que trabalham em conjunto */
+    .input-action-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px;
+    }
+
+    .input-action-group .select-custom {
+        background-color: #ffffff;
     }
 
     .select-custom {

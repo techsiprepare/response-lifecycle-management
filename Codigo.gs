@@ -93,7 +93,7 @@ function getTicketsTriagem(statusFiltro) {
       status: headers.indexOf('Status'),
       motivo: headers.indexOf('Motivo'),
       responsavel: headers.indexOf('Responsável'),
-      verQuestao: headers.indexOf('Ver_Questão_Site'),
+      // verQuestao é calculado programaticamente; não lemos da planilha
       autorizacao: headers.indexOf('Autorização'),
       autorizacaoAtualizada: headers.indexOf('Autorização Atualizada')
     };
@@ -144,7 +144,17 @@ function getTicketsTriagem(statusFiltro) {
           status: currentStatus,
           motivo: row[map.motivo] || '',
           responsavel: row[map.responsavel] || '',
-          verQuestaoUrl: row[map.verQuestao] || '',
+          verQuestao: (function() {
+            var preCur = row[map.preCuradoria] ? String(row[map.preCuradoria]) : '';
+            var idP = row[map.idProva] ? String(row[map.idProva]).trim() : '';
+            var qNum = row[map.questaoNum] ? String(row[map.questaoNum]).trim() : '';
+            var tp = row[map.tipo] ? String(row[map.tipo]).trim() : '';
+            var tipoCapit = tp.length > 0 ? tp.charAt(0).toUpperCase() + tp.slice(1).toLowerCase() : '';
+            if (preCur.indexOf('\u2705') !== -1 && idP && qNum && tipoCapit) {
+              return 'https://techsiprepare.github.io/#visualizar?prova=' + idP + '&questao=' + qNum + '-' + tipoCapit;
+            }
+            return '';
+          })(),
           dataHora: map.dataHora !== -1 ? formatarDataExcel(row[map.dataHora]) : '',
           autorizacao: map.autorizacao !== -1 ? (row[map.autorizacao] || '') : '',
           autorizacaoAtualizada: map.autorizacaoAtualizada !== -1 ? (row[map.autorizacaoAtualizada] || '') : ''

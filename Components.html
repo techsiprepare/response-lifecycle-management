@@ -1,358 +1,204 @@
 <script>
     window.AppComponents = {
         Badge: function (status) {
-            const config = window.AppConfig.statusConfig[status] || {
+            const config = window.AppConfig && window.AppConfig.statusConfig ? window.AppConfig.statusConfig[status] : null;
+            const cfg = config || {
                 label: status || 'Novo',
                 style: { backgroundColor: '#e2e8f0', color: '#4a5568' }
             };
-            return `<span class="badge" style="background-color: ${config.style.backgroundColor}; color: ${config.style.color};">${config.label}</span>`;
+            return '<span class="badge" style="background-color: ' + cfg.style.backgroundColor + '; color: ' + cfg.style.color + ';">' + cfg.label + '</span>';
         },
 
-        StatusTabs: function (activeTab, searchQuery = '') {
-            const isSearching = !!(searchQuery && searchQuery.trim());
-            const tabFoco = isSearching ? null : activeTab;
+        StatusTabs: function (activeTab, searchQuery) {
+            var sQuery = searchQuery || '';
+            var isSearching = !!(sQuery && sQuery.trim());
+            var tabFoco = isSearching ? null : activeTab;
 
-            return `
-                <div class="tabs-container">
-                    <div class="tabs-list">
-                        <button class="tab-item ${tabFoco === 'triagem' ? 'active' : ''}" data-tab="triagem">
-                            Triagem
-                        </button>
-                        <button class="tab-item ${tabFoco === 'pronto_analise' ? 'active' : ''}" data-tab="pronto_analise">
-                            Pronto p/ Análise
-                        </button>
-                        <button class="tab-item ${tabFoco === 'em_analise' ? 'active' : ''}" data-tab="em_analise">
-                            Em análise
-                        </button>
-                        <button class="tab-item ${tabFoco === 'pronto_reanalise' ? 'active' : ''}" data-tab="pronto_reanalise">
-                            Pronto p/ Reanálise
-                        </button>
-                        <button class="tab-item ${tabFoco === 'devolvidos' ? 'active' : ''}" data-tab="devolvidos">
-                            Devolvido p/ Ajustes
-                        </button>
-                        <button class="tab-item ${tabFoco === 'aprovados' ? 'active' : ''}" data-tab="aprovados">
-                            Aprovados
-                        </button>
-                        <button class="tab-item ${tabFoco === 'rejeitados' ? 'active' : ''}" data-tab="rejeitados">
-                            Rejeitados
-                        </button>
-                    </div>
-                    <div class="search-box">
-                        <input type="text" id="search-ticket-input" class="search-input" placeholder="Pesquisar ticket..." value="${searchQuery || ''}">
-                    </div>
-                </div>
-            `;
+            return '<div class="tabs-container">' +
+                '<div class="tabs-list">' +
+                '<button class="tab-item ' + (tabFoco === 'triagem' ? 'active' : '') + '" data-tab="triagem">Triagem</button>' +
+                '<button class="tab-item ' + (tabFoco === 'pronto_analise' ? 'active' : '') + '" data-tab="pronto_analise">Pronto p/ Análise</button>' +
+                '<button class="tab-item ' + (tabFoco === 'em_analise' ? 'active' : '') + '" data-tab="em_analise">Em análise</button>' +
+                '<button class="tab-item ' + (tabFoco === 'pronto_reanalise' ? 'active' : '') + '" data-tab="pronto_reanalise">Pronto p/ Reanálise</button>' +
+                '<button class="tab-item ' + (tabFoco === 'devolvidos' ? 'active' : '') + '" data-tab="devolvidos">Devolvido p/ Ajustes</button>' +
+                '<button class="tab-item ' + (tabFoco === 'aprovados' ? 'active' : '') + '" data-tab="aprovados">Aprovados</button>' +
+                '<button class="tab-item ' + (tabFoco === 'rejeitados' ? 'active' : '') + '" data-tab="rejeitados">Rejeitados</button>' +
+                '</div>' +
+                '<div class="search-box">' +
+                '<input type="text" id="search-ticket-input" class="search-input" placeholder="Pesquisar ticket..." value="' + sQuery + '">' +
+                '</div>' +
+                '</div>';
         },
 
         HeaderRow: function (headers) {
-            return `
-                <div class="header-row">
-                    ${headers.map(h => `
-                        <div class="header-cell ${h.customClass}">${h.label}</div>
-                    `).join('')}
-                </div>
-            `;
+            var html = '<div class="header-row">';
+            if (headers && headers.forEach) {
+                headers.forEach(function (h) {
+                    html += '<div class="header-cell ' + (h.customClass || '') + '">' + h.label + '</div>';
+                });
+            }
+            html += '</div>';
+            return html;
         },
 
         TicketRow: function (ticket) {
-            const questaoTxt = ticket.questaoNum ? ` (Qst ${ticket.questaoNum})` : '';
-            const provaDisplay = ticket.idProva || '<em>Sem Prova Vinc.</em>';
-            const respDisplay = ticket.responsavel || '<em>Sem Responsável</em>';
+            var questaoTxt = ticket.questaoNum ? ' (Qst ' + ticket.questaoNum + ')' : '';
+            var provaDisplay = ticket.idProva || '<em>Sem Prova Vinc.</em>';
+            var respDisplay = ticket.responsavel || '<em>Sem Responsável</em>';
 
-            return `
-                <div class="ticket-row" data-id="${ticket.ticket}">
-                    <div class="cell">${this.Badge(ticket.status)}</div>
-                    <div class="cell"><strong>${ticket.ticket}</strong></div>
-                    <div class="cell">${ticket.nomeAluno}</div>
-                    <div class="cell cell-prova">${provaDisplay}${questaoTxt}</div>
-                    <div class="cell cell-responsible">${respDisplay}</div>
-                </div>
-            `;
+            return '<div class="ticket-row" data-id="' + ticket.ticket + '">' +
+                '<div class="cell">' + this.Badge(ticket.status) + '</div>' +
+                '<div class="cell"><strong>' + ticket.ticket + '</strong></div>' +
+                '<div class="cell">' + ticket.nomeAluno + '</div>' +
+                '<div class="cell cell-prova">' + provaDisplay + questaoTxt + '</div>' +
+                '<div class="cell cell-responsible">' + respDisplay + '</div>' +
+                '</div>';
         },
 
-        TicketTable: function (tickets, headers, uiConfig, activeTab, isLoading, searchQuery = '') {
-            let content = '';
+        TicketTable: function (tickets, headers, uiConfig, activeTab, isLoading, searchQuery) {
+            var content = '';
             if (isLoading) {
-                content = `
-                    <div class="loading-overlay">
-                        <div class="spinner"></div>
-                        <p>Carregando dados...</p>
-                    </div>
-                `;
+                content = '<div class="loading-overlay"><div class="spinner"></div><p>Carregando dados...</p></div>';
             } else if (!tickets || tickets.length === 0) {
-                content = `<div class="empty-state">${uiConfig.messages.emptyState}</div>`;
+                content = '<div class="empty-state">' + (uiConfig.messages.emptyState || 'Nenhum registro') + '</div>';
             } else {
-                content = `
-                    <div class="ticket-table">
-                        ${this.HeaderRow(headers)}
-                        ${tickets.map(t => this.TicketRow(t)).join('')}
-                    </div>
-                    <div id="search-empty-state" class="empty-state" style="display: none;">
-                        Nenhum ticket encontrado para a pesquisa.
-                    </div>
-                `;
+                var rowsHtml = '';
+                var self = this;
+                tickets.forEach(function (t) {
+                    rowsHtml += self.TicketRow(t);
+                });
+                content = '<div class="ticket-table">' + this.HeaderRow(headers) + rowsHtml + '</div>' +
+                    '<div id="search-empty-state" class="empty-state" style="display: none;">Nenhum ticket encontrado para a pesquisa.</div>';
             }
 
-            return `
-                <div class="table-section">
-                    ${this.StatusTabs(activeTab, searchQuery)}
-                    <div class="table-container">
-                        ${content}
-                    </div>
-                </div>
-            `;
+            return '<div class="table-section">' +
+                this.StatusTabs(activeTab, searchQuery) +
+                '<div class="table-container">' + content + '</div>' +
+                '</div>';
         },
 
         AsideDrawer: function (title, uiConfig) {
-            return `
-                <aside class="sidebar-aside" id="ticket-aside">
-                    <div class="aside-header">
-                        <h3 class="aside-title" id="aside-title-text">${title}</h3>
-                        <button class="aside-close-btn" id="close-aside-btn" aria-label="Fechar">&times;</button>
-                    </div>
-                    <div class="aside-content" id="aside-body-content">
-                        <div class="empty-state">${uiConfig.messages.selectTicket}</div>
-                    </div>
-                </aside>
-            `;
+            return '<aside class="sidebar-aside" id="ticket-aside">' +
+                '<div class="aside-header">' +
+                '<h3 class="aside-title" id="aside-title-text">' + title + '</h3>' +
+                '<button class="aside-close-btn" id="close-aside-btn" aria-label="Fechar">&times;</button>' +
+                '</div>' +
+                '<div class="aside-content" id="aside-body-content">' +
+                '<div class="empty-state">' + uiConfig.messages.selectTicket + '</div>' +
+                '</div>' +
+                '</aside>';
         },
 
         BaseDetails: function (ticket) {
-            return `
-                <div class="detail-group">
-                    <span class="detail-label">Aluno</span>
-                    <span class="detail-value">${ticket.nomeAluno}</span>
-                </div>
-                <div class="detail-group">
-                    <span class="detail-label">Assunto / Questão</span>
-                    <span class="detail-value">${ticket.assunto || '-'} (Qst ${ticket.questaoNum || '-'})</span>
-                </div>
-                <div class="detail-group">
-                    <span class="detail-label">Prova</span>
-                    <span class="detail-value">${ticket.idProva || '<em>Sem Prova Vinc.</em>'}</span>
-                </div>
-                <div class="detail-group">
-                    <span class="detail-label">Responsável</span>
-                    <span class="detail-value">${ticket.responsavel || '<em>Sem Responsável</em>'}</span>
-                </div>
-                <div class="detail-group">
-                    <span class="detail-label">Data/Hora</span>
-                    <span class="detail-value">${ticket.dataHora}</span>
-                </div>
-            `;
+            return '<div class="detail-group"><span class="detail-label">Aluno</span><span class="detail-value">' + ticket.nomeAluno + '</span></div>' +
+                '<div class="detail-group"><span class="detail-label">Assunto / Questão</span><span class="detail-value">' + (ticket.assunto || '-') + ' (Qst ' + (ticket.questaoNum || '-') + ')</span></div>' +
+                '<div class="detail-group"><span class="detail-label">Prova</span><span class="detail-value">' + (ticket.idProva || '<em>Sem Prova Vinc.</em>') + '</span></div>' +
+                '<div class="detail-group"><span class="detail-label">Responsável</span><span class="detail-value">' + (ticket.responsavel || '<em>Sem Responsável</em>') + '</span></div>' +
+                '<div class="detail-group"><span class="detail-label">Data/Hora</span><span class="detail-value">' + ticket.dataHora + '</span></div>';
         },
 
         AsideContent: function (ticket, activeTab) {
-            const isValido = ticket.preCuradoria && ticket.preCuradoria.includes('✅');
-            const preCuradoriaColor = isValido ? '#2f855a' : '#c53030';
-            const idComProblema = !ticket.idProva || (ticket.preCuradoria && ticket.preCuradoria.includes('❌'));
+            var isValido = ticket.preCuradoria && ticket.preCuradoria.indexOf('✅') !== -1;
+            var preCuradoriaColor = isValido ? '#2f855a' : '#c53030';
+            var idComProblema = !ticket.idProva || (ticket.preCuradoria && ticket.preCuradoria.indexOf('❌') !== -1);
 
-            // Valida se a URL é um link acessível
-            const temVideoValido = ticket.videoUrl && /^https?:\/\//i.test(ticket.videoUrl);
-            const temAutorizacaoValida = ticket.autorizacao && /^https?:\/\//i.test(ticket.autorizacao);
+            var temVideoValido = ticket.videoUrl && /^https?:\/\//i.test(ticket.videoUrl);
+            var temAutorizacaoValida = ticket.autorizacao && /^https?:\/\//i.test(ticket.autorizacao);
+            var temVerQuestao = ticket.verQuestao && /^https?:\/\//i.test(ticket.verQuestao);
 
-            const containerFila = `<div id="container-fila-questao"></div>`;
+            var containerFila = '<div id="container-fila-questao"></div>';
+            var btnVideo = temVideoValido
+                ? '<button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">Ver Vídeo do Aluno</button>'
+                : '<span class="detail-label" style="color:red; text-align:center;">Vídeo indisponível</span>';
+            var btnVerQuestao = temVerQuestao
+                ? '<a id="btn-ver-questao-site" href="' + ticket.verQuestao + '" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Ver Questão no Site</a>'
+                : '';
 
-            // Layout para a aba Triagem
             if (activeTab === 'triagem') {
-                return `
-                    ${containerFila}
-                    ${this.BaseDetails(ticket)}
-                    <div class="detail-group">
-                        <span class="detail-label">Assunto Principal</span>
-                        <span class="detail-value">${ticket.assunto || 'Não informado'}</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Questão / Tipo</span>
-                        <span class="detail-value">Questão ${ticket.questaoNum || '-'} (${ticket.tipo || '-'})</span>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Pré-Curadoria</span>
-                        <span class="detail-value" style="color: ${preCuradoriaColor}">${ticket.preCuradoria || 'Não verificada'}</span>
-                    </div>
-
-                    ${idComProblema ? `
-                        <div class="module-box">
-                            <span class="detail-label" style="color: #c53030;">Ajustar ID da Prova</span>
-                            <button id="btn-fetch-provas" class="btn btn-secondary">Buscar IDs da Prova</button>
-                            <select id="select-id-prova" class="select-custom" style="display:none;">
-                                <option value="">Carregando opções...</option>
-                            </select>
-                            <button id="btn-save-prova" class="btn btn-primary" style="display:none;">Salvar Novo ID</button>
-                        </div>
-                    ` : ''}
-
-                    <div class="actions-group">
-                        ${temVideoValido ? `
-                            <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
-                                Ver Vídeo do Aluno
-                            </button>
-                        ` : '<span class="detail-label" style="color:red; text-align:center;">Vídeo indisponível</span>'}
-                        
-                        <button id="btn-pronto-analise" class="btn btn-success" data-id="${ticket.ticket}">Pronto p/ Análise</button>
-                    </div>
-                `;
+                return containerFila + this.BaseDetails(ticket) +
+                    '<div class="detail-group"><span class="detail-label">Assunto Principal</span><span class="detail-value">' + (ticket.assunto || 'Não informado') + '</span></div>' +
+                    '<div class="detail-group"><span class="detail-label">Questão / Tipo</span><span class="detail-value">Questão ' + (ticket.questaoNum || '-') + ' (' + (ticket.tipo || '-') + ')</span></div>' +
+                    '<div class="detail-group"><span class="detail-label">Pré-Curadoria</span><span class="detail-value" style="color: ' + preCuradoriaColor + '">' + (ticket.preCuradoria || 'Não verificada') + '</span></div>' +
+                    '<div class="module-box">' +
+                    '<span class="detail-label">Conteúdo e Revisão</span>' +
+                    '<div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' +
+                    btnVideo +
+                    btnVerQuestao +
+                    (idComProblema ? '<button id="btn-fetch-provas" class="btn btn-secondary">Buscar IDs da Prova</button><select id="select-id-prova" class="select-custom" style="display:none;"><option value="">Carregando opções...</option></select><button id="btn-save-prova" class="btn btn-primary" style="display:none;">Salvar Novo ID</button>' : '') +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="module-box">' +
+                    '<span class="detail-label">Fluxo de Trabalho</span>' +
+                    '<div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' +
+                    '<button id="btn-pronto-analise" class="btn btn-success" data-id="' + ticket.ticket + '">Pronto p/ Análise</button>' +
+                    '</div>' +
+                    '</div>';
             }
 
-            // Layout para a aba Em análise
             if (activeTab === 'em_analise') {
-                return `
-                    ${containerFila}
-                    ${this.BaseDetails(ticket)}
+                var btnAutorizacao = temAutorizacaoValida
+                    ? '<button id="btn-ver-autorizacao-modal" class="btn btn-secondary" style="width:100%;">Ver Autorização</button>'
+                    : '<span class="detail-label" style="color:red; text-align:center; display:block; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">Autorização indisponível</span>';
 
-                    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; width: 100%;">
-                        <div style="flex: 1;">
-                            ${temVideoValido ? `
-                                <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
-                                    Ver Vídeo do Aluno
-                                </button>
-                            ` : '<span class="detail-label" style="color:red; text-align:center; display:block; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">Vídeo indisponível</span>'}
-                        </div>
-                        <div style="flex: 1;">
-                            ${temAutorizacaoValida ? `
-                                <button id="btn-ver-autorizacao-modal" class="btn btn-secondary" style="width:100%;">
-                                    Ver Autorização
-                                </button>
-                            ` : '<span class="detail-label" style="color:red; text-align:center; display:block; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">Autorização indisponível</span>'}
-                        </div>
-                        <button id="btn-enviar-barema-aluno" class="btn btn-primary">Enviar Barema para Aluno</button>
-                        <button id="btn-solicitar-professor" class="btn btn-primary">Solicitar Avaliação p/ Professor</button>
-                    </div>
-
-                    <div class="actions-group">
-                        <button id="btn-aprovar-ticket" class="btn btn-success">Aprovar Ticket</button>
-                        <button id="btn-devolver-ajustes" class="btn btn-warning">Devolver p/ Ajustes</button>
-                        <button id="btn-rejeitado" class="btn btn-secondary" style="background-color:#fed7d7; color:#9b2c2c;">Rejeitar Ticket</button>
-                        <button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button>
-                    </div>
-                `;
+                return containerFila + this.BaseDetails(ticket) +
+                    '<div class="module-box"><span class="detail-label">Conteúdo e Revisão</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnVideo + btnAutorizacao + btnVerQuestao + '</div></div>' +
+                    '<div class="module-box"><span class="detail-label">Comunicação</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><button id="btn-enviar-barema-aluno" class="btn btn-primary">Enviar Barema para Aluno</button><button id="btn-solicitar-professor" class="btn btn-primary">Solicitar Avaliação p/ Professor</button></div></div>' +
+                    '<div class="module-box"><span class="detail-label">Fluxo de Trabalho</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><button id="btn-aprovar-ticket" class="btn btn-success">Aprovar Ticket</button><button id="btn-devolver-ajustes" class="btn btn-warning">Devolver p/ Ajustes</button><button id="btn-rejeitado" class="btn btn-secondary" style="background-color:#fed7d7; color:#9b2c2c;">Rejeitar Ticket</button><button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button></div></div>';
             }
 
-            // Layout para a aba Devolvido p/ Ajustes
             if (activeTab === 'devolvidos') {
-                const gmailUrl = 'https://mail.google.com/mail/#search/' + encodeURIComponent(ticket.ticket);
-                return `
-                    ${containerFila}
-                    ${this.BaseDetails(ticket)}
-
-                    <div class="actions-group">
-                        ${temVideoValido ? `
-                            <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
-                                Ver Vídeo do Aluno
-                            </button>
-                        ` : '<span class="detail-label" style="color:red; text-align:center;">Vídeo indisponível</span>'}
-
-                        <a href="${gmailUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
-                            Abrir Gmail (Buscar Ticket)
-                        </a>
-                        <button id="btn-devolvido-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button>
-                    </div>
-                `;
+                var gmailUrl = 'https://mail.google.com/mail/#search/' + encodeURIComponent(ticket.ticket);
+                return containerFila + this.BaseDetails(ticket) +
+                    '<div class="module-box"><span class="detail-label">Conteúdo e Revisão</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnVideo + btnVerQuestao + '</div></div>' +
+                    '<div class="module-box"><span class="detail-label">Comunicação</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><a href="' + gmailUrl + '" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Abrir Gmail (Buscar Ticket)</a></div></div>' +
+                    '<div class="module-box"><span class="detail-label">Fluxo de Trabalho</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><button id="btn-devolvido-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button></div></div>';
             }
 
-            // Layout para a aba Aprovados
             if (activeTab === 'aprovados') {
-                return `
-                    ${containerFila}
-                    ${this.BaseDetails(ticket)}
-
-                    <div class="module-box">
-                        <span class="detail-label">URL do Vídeo Oficial (Publicado)</span>
-                        <input type="text" id="input-url-oficial" class="select-custom" value="${ticket.urlOficial || ''}" placeholder="https://...">
-                        <button id="btn-salvar-url-oficial" class="btn btn-primary">Salvar Link do Vídeo</button>
-                    </div>
-
-                    <div class="actions-group">
-                        ${temVideoValido ? `
-                            <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
-                                Ver Vídeo do Aluno
-                            </button>
-                        ` : '<span class="detail-label" style="color:red; text-align:center;">Vídeo indisponível</span>'}
-
-                        <button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button>
-                    </div>
-                `;
+                return containerFila + this.BaseDetails(ticket) +
+                    '<div class="module-box"><span class="detail-label">Conteúdo e Revisão</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnVideo + btnVerQuestao + '<div class="input-action-group"><input type="text" id="input-url-oficial" class="select-custom" value="' + (ticket.urlOficial || '') + '" placeholder="https://..."><button id="btn-salvar-url-oficial" class="btn btn-primary">Salvar Link do Vídeo</button></div></div></div>' +
+                    '<div class="module-box"><span class="detail-label">Fluxo de Trabalho</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button></div></div>';
             }
 
-            // Layout para a aba Rejeitados
             if (activeTab === 'rejeitados') {
-                return `
-                    ${containerFila}
-                    ${this.BaseDetails(ticket)}
-                    <div class="detail-group">
-                        <span class="detail-label">Motivo da Rejeição</span>
-                        <span class="detail-value" style="color:#c53030;">${ticket.motivo || 'Não informado'}</span>
-                    </div>
-
-                    <div class="actions-group">
-                        ${temVideoValido ? `
-                            <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
-                                Ver Vídeo do Aluno
-                            </button>
-                        ` : '<span class="detail-label" style="color:red; text-align:center;">Vídeo indisponível</span>'}
-
-                        <button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button>
-                    </div>
-                `;
+                return containerFila + this.BaseDetails(ticket) +
+                    '<div class="detail-group"><span class="detail-label">Motivo da Rejeição</span><span class="detail-value" style="color:#c53030;">' + (ticket.motivo || 'Não informado') + '</span></div>' +
+                    '<div class="module-box"><span class="detail-label">Conteúdo e Revisão</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnVideo + btnVerQuestao + '</div></div>' +
+                    '<div class="module-box"><span class="detail-label">Fluxo de Trabalho</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button></div></div>';
             }
 
-            // Layout para a aba Pronto p/ Análise (e Pronto p/ Reanálise)
-            return `
-                ${containerFila}
-                ${this.BaseDetails(ticket)}
-
-                <div class="module-box">
-                    <label class="detail-label">Responsável</label>
-                    <input type="text" id="input-responsavel" class="select-custom" value="${ticket.responsavel || ''}" placeholder="Nome do Responsável">
-                    <div id="msg-aviso-responsavel" style="display:none; color: #c05621; font-size: 12px; margin-top: 6px; font-weight: 500;">
-                        ⚠️ Mude p/ Em análise para salvar o responsável.
-                    </div>
-                </div>
-
-                <div class="actions-group">
-                    ${temVideoValido ? `
-                        <button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">
-                            Ver Vídeo do Aluno
-                        </button>
-                    ` : '<span class="detail-label" style="color:red; text-align:center;">Vídeo indisponível</span>'}
-                    
-                    <button id="btn-em-analise" class="btn btn-primary">Mudar p/ Em análise</button>
-                </div>
-            `;
+            return containerFila + this.BaseDetails(ticket) +
+                '<div class="module-box"><span class="detail-label">Conteúdo e Revisão</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnVideo + btnVerQuestao + '</div></div>' +
+                '<div class="module-box"><span class="detail-label">Fluxo de Trabalho</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><div class="input-action-group"><input type="text" id="input-responsavel" class="select-custom" value="' + (ticket.responsavel || '') + '" placeholder="Nome do Responsável"><div id="msg-aviso-responsavel" style="display:none; color: #c05621; font-size: 12px; font-weight: 500;">⚠️ Mude p/ Em análise para salvar o responsável.</div><button id="btn-em-analise" class="btn btn-primary">Mudar p/ Em análise</button></div></div></div>';
         },
 
         UrlModal: function () {
-            return `
-                <div id="url-modal-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:9999;">
-                    <div id="url-modal" style="background:#fff; border-radius:12px; padding:24px; max-width:360px; width:500px; box-shadow:0 8px 32px rgba(0,0,0,0.18); display:flex; flex-direction:column; gap:8px;">
-                        <h4 id="url-modal-title">Selecionar URL do Vídeo</h4>
-                        <p id="url-modal-desc">Escolha qual link deseja utilizar no e-mail:</p>
-
-                        <!-- Container para o campo dinâmico do e-mail do professor -->
-                        <div id="url-modal-prof-container" style="display:none; flex-direction:column; gap:4px; margin-bottom:12px;">
-                            <label style="font-size:0.75rem; font-weight:700; color:#8fa0b0; text-transform:uppercase;">E-mail do Professor *</label>
-                            <input type="email" id="modal-input-email-professor" class="select-custom" placeholder="exemplo@professor.com">
-                            <span id="modal-email-error" style="color:#e53e3e; font-size:0.75rem; display:none; margin-top:2px;">É obrigatório colocar o e-mail do professor.</span>
-                        </div>
-
-                        <div id="url-modal-btns"></div>
-                        <div id="url-modal-resultado" style="display:none;">
-                            <p id="url-modal-msg"></p>
-                            <a id="url-modal-gmail-link" href="https://mail.google.com/mail/#drafts" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="margin-top:8px;">Abrir Rascunhos no Gmail</a>
-                        </div>
-                        <button id="url-modal-close" class="btn btn-secondary">Fechar</button>
-                    </div>
-                </div>
-            `;
+            return '<div id="url-modal-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:9999;">' +
+                '<div id="url-modal" style="background:#fff; border-radius:12px; padding:24px; max-width:360px; width:500px; box-shadow:0 8px 32px rgba(0,0,0,0.18); display:flex; flex-direction:column; gap:8px;">' +
+                '<h4 id="url-modal-title">Selecionar URL do Vídeo</h4>' +
+                '<p id="url-modal-desc">Escolha qual link deseja utilizar no e-mail:</p>' +
+                '<div id="url-modal-prof-container" style="display:none; flex-direction:column; gap:4px; margin-bottom:12px;">' +
+                '<label style="font-size:0.75rem; font-weight:700; color:#8fa0b0; text-transform:uppercase;">E-mail do Professor *</label>' +
+                '<input type="email" id="modal-input-email-professor" class="select-custom" placeholder="exemplo@professor.com">' +
+                '<span id="modal-email-error" style="color:#e53e3e; font-size:0.75rem; display:none; margin-top:2px;">É obrigatório colocar o e-mail do professor.</span>' +
+                '</div>' +
+                '<div id="url-modal-btns"></div>' +
+                '<div id="url-modal-resultado" style="display:none;">' +
+                '<p id="url-modal-msg"></p>' +
+                '<a id="url-modal-gmail-link" href="https://mail.google.com/mail/#drafts" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="margin-top:8px;">Abrir Rascunhos no Gmail</a>' +
+                '</div>' +
+                '<button id="url-modal-close" class="btn btn-secondary">Fechar</button>' +
+                '</div>' +
+                '</div>';
         },
 
-        AppLayout: function (tickets, config, activeTab, isLoading = false, searchQuery = '') {
-            return `
-                <div class="layout-container">
-                    ${this.TicketTable(tickets, config.tableHeaders, config.ui, activeTab, isLoading, searchQuery)}
-                    ${this.AsideDrawer(config.ui.asideDefaultTitle, config.ui)}
-                </div>
-            `;
+        AppLayout: function (tickets, config, activeTab, isLoading, searchQuery) {
+            var loadState = typeof isLoading !== 'undefined' ? isLoading : false;
+            var sQuery = typeof searchQuery !== 'undefined' ? searchQuery : '';
+            return '<div class="layout-container">' +
+                this.TicketTable(tickets, config.tableHeaders, config.ui, activeTab, loadState, sQuery) +
+                this.AsideDrawer(config.ui.asideDefaultTitle, config.ui) +
+                '</div>';
         }
     };
 </script>
