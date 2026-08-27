@@ -257,7 +257,7 @@
 
                     Data.salvarIdProva(ticket, novoId,
                         (msg) => {
-                            renderApp();
+                            loadTabData(Data.state.activeTab);
                         },
                         (err) => {
                             alert('Erro ao salvar: ' + err.message);
