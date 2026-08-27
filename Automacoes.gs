@@ -66,7 +66,7 @@ function _automacoes_obterTemplateCorpoEmailHtml(dados) {
     + '<tr style="background-color: #f2f2f2;"><td colspan="4"><strong>1. QUALIDADE TÉCNICA &amp; FORMATO</strong></td></tr>'
     + '<tr><td>• Imagem e som em boa qualidade/resolução (mínimo 1080p, áudio limpo)</td><td style="text-align: center;">&nbsp;</td><td style="text-align: center;">&nbsp;</td><td></td></tr>'
     + '<tr><td>• Presença da imagem do apresentador (Picture-in-Picture / Webcam)</td><td style="text-align: center;">&nbsp;</td><td style="text-align: center;">&nbsp;</td><td></td></tr>'
-    + '<tr><td>• Duração adequada do vídeo (5–15m Objetiva / 8–15m Discursiva)</td><td style="text-align: center;">&nbsp;</td><td style="text-align: center;">&nbsp;</td><td></td></tr>'
+    + '<tr><td>• Duração adequada do vídeo (3–15m Objetiva / 5–15m Discursiva)</td><td style="text-align: center;">&nbsp;</td><td style="text-align: center;">&nbsp;</td><td></td></tr>'
     + '<tr><td>• Foco único (exatamente 1 questão resolvida por arquivo)</td><td style="text-align: center;">&nbsp;</td><td style="text-align: center;">&nbsp;</td><td></td></tr>'
     + '<tr><td>• Enviou o vídeo corretamente utilizando um link do Google Drive, assim como especificado nas orientações.</td><td style="text-align: center;">&nbsp;</td><td style="text-align: center;">&nbsp;</td><td></td></tr>'
     + '<tr style="background-color: #f2f2f2;"><td colspan="4"><strong>2. DIDÁTICA E CONTEÚDO</strong></td></tr>'
