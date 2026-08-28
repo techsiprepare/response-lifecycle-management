@@ -46,8 +46,19 @@
             var provaDisplay = ticket.idProva || '<em>Sem Prova Vinc.</em>';
             var respDisplay = ticket.responsavel || '<em>Sem Responsável</em>';
 
+            // Monta os badges da célula de status
+            var badgesHtml = this.Badge(ticket.status);
+
+            // Se estiver na aba/status Aprovado e NÃO tiver urlOficial, adiciona o badge "Não publicado"
+            if (ticket.status === 'Aprovado' || ticket.status === window.AppConfig.statusConfig['Aprovado']?.label) {
+                var temUrlOficial = ticket.urlOficial && String(ticket.urlOficial).trim() !== '';
+                if (!temUrlOficial) {
+                    badgesHtml += ' <span class="badge badge-nao-publicado">Não publicado</span>';
+                }
+            }
+
             return '<div class="ticket-row" data-id="' + ticket.ticket + '">' +
-                '<div class="cell">' + this.Badge(ticket.status) + '</div>' +
+                '<div class="cell cell-status-group">' + badgesHtml + '</div>' +
                 '<div class="cell"><strong>' + ticket.ticket + '</strong></div>' +
                 '<div class="cell">' + ticket.nomeAluno + '</div>' +
                 '<div class="cell cell-prova">' + provaDisplay + questaoTxt + '</div>' +

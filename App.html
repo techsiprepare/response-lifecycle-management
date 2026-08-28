@@ -442,9 +442,14 @@
 
                     Data.salvarUrlVideoOficial(ticket, novaUrl,
                         (msg) => {
+                            // 1. Atualiza a propriedade no ticket atual no estado local
+                            ticket.urlOficial = novaUrl;
+
                             alert(msg || 'URL do Vídeo Oficial salva com sucesso!');
                             btnSalvarUrlOficial.textContent = 'Salvar Link do Vídeo';
                             btnSalvarUrlOficial.disabled = false;
+                            
+                            // 2. Re-renderiza a aplicação para atualizar os badges na tabela
                             renderApp();
                         },
                         (err) => {

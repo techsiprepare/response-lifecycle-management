@@ -534,4 +534,23 @@
         padding-top: 4px;
         border-top: 1px solid #edf2f7;
     }
+
+    /* Badge secundário "Não publicado" (Laranja) */
+    .badge-nao-publicado {
+        background-color: #feebc8;
+        color: #c05621;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: bold;
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    /* Garante alinhamento flexível caso haja múltiplos badges na mesma célula */
+    .cell.cell-status-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
 </style>
