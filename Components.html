@@ -106,6 +106,9 @@
             var temAutorizacaoValida = ticket.autorizacao && /^https?:\/\//i.test(ticket.autorizacao);
             var temVerQuestao = ticket.verQuestao && /^https?:\/\//i.test(ticket.verQuestao);
 
+            var gmailUrl = 'https://mail.google.com/mail/#search/' + encodeURIComponent(ticket.ticket);
+            var btnAbrirGmail = '<a href="' + gmailUrl + '" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Abrir Gmail (Buscar Ticket)</a>';
+
             var containerFila = '<div id="container-fila-questao"></div>';
             var btnVideo = temVideoValido
                 ? '<button id="btn-ver-videos-modal" class="btn btn-secondary" style="width:100%;">Ver Vídeo do Aluno</button>'
@@ -142,21 +145,21 @@
 
                 return containerFila + this.BaseDetails(ticket) +
                     '<div class="module-box"><span class="detail-label">Conteúdo e Revisão</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnVideo + btnAutorizacao + btnVerQuestao + '</div></div>' +
-                    '<div class="module-box"><span class="detail-label">Comunicação</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><button id="btn-enviar-barema-aluno" class="btn btn-primary">Enviar Barema para Aluno</button><button id="btn-solicitar-professor" class="btn btn-primary">Solicitar Avaliação p/ Professor</button></div></div>' +
+                    '<div class="module-box"><span class="detail-label">Comunicação</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><button id="btn-enviar-barema-aluno" class="btn btn-primary">Enviar Barema para Aluno</button><button id="btn-solicitar-professor" class="btn btn-primary">Solicitar Avaliação p/ Professor</button>' + btnAbrirGmail + '</div></div>' +
                     '<div class="module-box"><span class="detail-label">Fluxo de Trabalho</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><button id="btn-aprovar-ticket" class="btn btn-success">Aprovar Ticket</button><button id="btn-devolver-ajustes" class="btn btn-warning">Devolver p/ Ajustes</button><button id="btn-rejeitado" class="btn btn-secondary" style="background-color:#fed7d7; color:#9b2c2c;">Rejeitar Ticket</button><button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button></div></div>';
             }
 
             if (activeTab === 'devolvidos') {
-                var gmailUrl = 'https://mail.google.com/mail/#search/' + encodeURIComponent(ticket.ticket);
                 return containerFila + this.BaseDetails(ticket) +
                     '<div class="module-box"><span class="detail-label">Conteúdo e Revisão</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnVideo + btnVerQuestao + '</div></div>' +
-                    '<div class="module-box"><span class="detail-label">Comunicação</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><a href="' + gmailUrl + '" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Abrir Gmail (Buscar Ticket)</a></div></div>' +
+                    '<div class="module-box"><span class="detail-label">Comunicação</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnAbrirGmail + '</div></div>' +
                     '<div class="module-box"><span class="detail-label">Fluxo de Trabalho</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><button id="btn-devolvido-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button></div></div>';
             }
 
             if (activeTab === 'aprovados') {
                 return containerFila + this.BaseDetails(ticket) +
                     '<div class="module-box"><span class="detail-label">Conteúdo e Revisão</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnVideo + btnVerQuestao + '<div class="input-action-group"><input type="text" id="input-url-oficial" class="select-custom" value="' + (ticket.urlOficial || '') + '" placeholder="https://..."><button id="btn-salvar-url-oficial" class="btn btn-primary">Salvar Link do Vídeo</button></div></div></div>' +
+                    '<div class="module-box"><span class="detail-label">Comunicação</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnAbrirGmail + '</div></div>' +
                     '<div class="module-box"><span class="detail-label">Fluxo de Trabalho</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button></div></div>';
             }
 
@@ -164,14 +167,15 @@
                 return containerFila + this.BaseDetails(ticket) +
                     '<div class="detail-group"><span class="detail-label">Motivo da Rejeição</span><span class="detail-value" style="color:#c53030;">' + (ticket.motivo || 'Não informado') + '</span></div>' +
                     '<div class="module-box"><span class="detail-label">Conteúdo e Revisão</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnVideo + btnVerQuestao + '</div></div>' +
+                    '<div class="module-box"><span class="detail-label">Comunicação</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnAbrirGmail + '</div></div>' +
                     '<div class="module-box"><span class="detail-label">Fluxo de Trabalho</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><button id="btn-pronto-reanalise" class="btn btn-secondary">Mudar p/ Pronto p/ Reanálise</button></div></div>';
             }
 
             return containerFila + this.BaseDetails(ticket) +
                 '<div class="module-box"><span class="detail-label">Conteúdo e Revisão</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnVideo + btnVerQuestao + '</div></div>' +
+                '<div class="module-box"><span class="detail-label">Comunicação</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;">' + btnAbrirGmail + '</div></div>' +
                 '<div class="module-box"><span class="detail-label">Fluxo de Trabalho</span><div class="actions-group" style="margin-top: 8px; border-top: none; padding-top: 0;"><div class="input-action-group"><input type="text" id="input-responsavel" class="select-custom" value="' + (ticket.responsavel || '') + '" placeholder="Nome do Responsável"><div id="msg-aviso-responsavel" style="display:none; color: #c05621; font-size: 12px; font-weight: 500;">⚠️ Mude p/ Em análise para salvar o responsável.</div><button id="btn-em-analise" class="btn btn-primary">Mudar p/ Em análise</button></div></div></div>';
         },
-
         UrlModal: function () {
             return '<div id="url-modal-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:9999;">' +
                 '<div id="url-modal" style="background:#fff; border-radius:12px; padding:24px; max-width:360px; width:500px; box-shadow:0 8px 32px rgba(0,0,0,0.18); display:flex; flex-direction:column; gap:8px;">' +
