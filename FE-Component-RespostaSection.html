@@ -1,0 +1,118 @@
+<!--
+  =============================================================================
+  COMPONENTE: RespostaSection
+  =============================================================================
+  RESPONSABILIDADE:
+    Componente contêiner principal que agrupa as Tabs de Navegação por Status e
+    o componente de Tabela/Lista (RespostaList).
+
+  COMPORTAMENTO:
+    - Calcula em tempo real o contador de tickets para cada status.
+    - Atualiza a propriedade `filtro` no AppStore ao clicar em uma tab.
+    - Renderiza internamente o `RespostaList`.
+
+  MODO DE USO:
+    const elementoSection = window.RespostaSection();
+    document.getElementById('app').appendChild(elementoSection);
+  =============================================================================
+-->
+
+<script>
+    (function () {
+        // -------------------------------------------------------------------------
+        // 1. ESTILOS (CSS Isolado)
+        // -------------------------------------------------------------------------
+        const styleId = 'style-resposta-section';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+        .table-section { display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0; }
+        .tabs-container { background-color: #ffffff; border: 1px solid #e1e8ed; border-radius: 16px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-sizing: border-box; }
+        .tabs-list { display: flex; flex-direction: row; align-items: center; overflow-x: auto; overflow-y: hidden; white-space: nowrap; -webkit-overflow-scrolling: touch; width: 100%; gap: 10px; }
+        .tabs-list::-webkit-scrollbar { display: none; }
+        .tab-item { flex-shrink: 0; padding: 6px 12px; white-space: nowrap; background: transparent; border: none; color: #8fa0b0; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease; }
+        .tab-item:hover { color: #2c3e50; background-color: #f4f7f9; }
+        .tab-item.active { color: #2c3e50; background-color: #e1e8ed; }
+        .tab-count { background-color: #f0f4f8; color: #3d4a57; font-size: 0.7rem; padding: 2px 6px; border-radius: 100px; }
+        .tab-item.active .tab-count { background-color: #ffffff; }
+      `;
+            document.head.appendChild(style);
+        }
+
+        // Listagem das Tabs com nome exibido e o valor do status correspondente
+        const TABS_CONFIG = [
+            { label: 'Todos', status: '' },
+            { label: 'Novo', status: 'Novo' },
+            { label: 'Pronto p/ Análise', status: 'Pronto p/ Análise' },
+            { label: 'Em análise', status: 'Em análise' },
+            { label: 'Pronto p/ Reanálise', status: 'Pronto p/ Reanálise' },
+            { label: 'Devolvido p/ Ajustes', status: 'Devolvido p/ Ajustes' },
+            { label: 'Aprovado', status: 'Aprovado' },
+            { label: 'Rejeitado', status: 'Rejeitado' }
+        ];
+
+        // -------------------------------------------------------------------------
+        // 2. ESTRUTURA HTML (Templates Visuais)
+        // -------------------------------------------------------------------------
+        function getTabsHTML(respostas, filtroAtual) {
+            return `
+        <div class="tabs-container">
+          <div class="tabs-list">
+            ${TABS_CONFIG.map(tab => {
+                // Calcula a quantidade de itens por status
+                const count = tab.status === ''
+                    ? respostas.length
+                    : respostas.filter(r => r.status === tab.status).length;
+
+                const isActive = filtroAtual === tab.status ? 'active' : '';
+
+                return `
+                <button 
+                  class="tab-item ${isActive}" 
+                  onclick="window.RespostaSection.setFiltro('${tab.status}')">
+                  ${tab.label}
+                  <span class="tab-count">${count}</span>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+        }
+
+        // -------------------------------------------------------------------------
+        // 3. SCRIPT E INTERAÇÕES (Lógica do Componente)
+        // -------------------------------------------------------------------------
+        window.RespostaSection = function () {
+            const container = document.createElement('div');
+            container.className = 'table-section';
+
+            // Cria a div onde as tabs vão renderizar
+            const tabsWrapper = document.createElement('div');
+
+            // Instancia a lista de respostas internamente
+            const listaComponente = window.RespostaList();
+
+            container.appendChild(tabsWrapper);
+            container.appendChild(listaComponente);
+
+            function render(state) {
+                const respostas = state?.respostas || [];
+                const filtro = state?.filtro || '';
+
+                tabsWrapper.innerHTML = getTabsHTML(respostas, filtro);
+            }
+
+            window.AppStore.subscribe(render);
+            render(window.AppStore.getState());
+
+            return container;
+        };
+
+        // Ação ao clicar na tab para atualizar o estado global
+        window.RespostaSection.setFiltro = function (status) {
+            window.AppStore.setState({ filtro: status });
+        };
+    })();
+</script>

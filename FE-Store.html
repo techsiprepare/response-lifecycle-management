@@ -1,0 +1,47 @@
+<script>
+    window.AppStore = {
+        state: {
+            respostas: [],
+            loading: true,
+            filtro: '',
+            ticketSelecionado: null
+        },
+        listeners: [],
+
+        // Inicializa a busca única dos dados no backend
+        async init() {
+            return new Promise((resolve, reject) => {
+                google.script.run
+                    .withSuccessHandler((dados) => {
+                        this.setState({
+                            respostas: Array.isArray(dados) ? dados : [],
+                            loading: false
+                        });
+                        resolve(dados);
+                    })
+                    .withFailureHandler((err) => {
+                        this.setState({ loading: false });
+                        reject(err);
+                    })
+                    .carregarDadosIniciais();
+            });
+        },
+
+        getState() {
+            return this.state;
+        },
+
+        setState(newState) {
+            this.state = { ...this.state, ...newState };
+            this.notify();
+        },
+
+        subscribe(listener) {
+            this.listeners.push(listener);
+        },
+
+        notify() {
+            this.listeners.forEach((listener) => listener(this.state));
+        }
+    };
+</script>

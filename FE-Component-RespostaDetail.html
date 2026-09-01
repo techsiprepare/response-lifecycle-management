@@ -1,0 +1,227 @@
+<!--
+  =============================================================================
+  COMPONENTE: RespostaDetail (Aside Overlay / Drawer)
+  =============================================================================
+  RESPONSABILIDADE:
+    Painel lateral estilo Gaveta (Drawer/Off-canvas) que sobrepõe a aplicação
+    ao clicar em um ticket. Exibe os detalhes base e seções dinâmicas.
+
+  COMPORTAMENTO:
+    - Overlay Backdrop: Aplica fundo escuro suave cobrindo 100vh da tela.
+    - Animação: Desliza suavemente da direita para a esquerda (TranslateX).
+    - Altura e Scroll: Ocupa 100vh com scroll interno isolado na área de conteúdo.
+    - Reativo: Fecha ao clicar fora (no backdrop), na tecla ESC ou no botão fechar.
+
+  MODO DE USO:
+    const elementoDetail = window.RespostaDetail();
+    document.getElementById('app').appendChild(elementoDetail);
+  =============================================================================
+-->
+
+<script>
+    (function () {
+        // -------------------------------------------------------------------------
+        // 1. ESTILOS (CSS Isolado com Animação e Overlay)
+        // -------------------------------------------------------------------------
+        const styleId = 'style-resposta-detail';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+        /* Fundo escurecido fixo que sobrepõe tudo */
+        .detail-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: rgba(0, 0, 0, 0.4);
+          backdrop-filter: blur(2px);
+          z-index: 9999;
+          display: flex;
+          justify-content: flex-end;
+          opacity: 1;
+          visibility: visible;
+          transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        /* Estado Oculto do Fundo */
+        .detail-backdrop.hidden {
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+        }
+
+        /* Container do Aside (Painel Lateral) */
+        .detail-aside {
+          width: 420px;
+          max-width: 90vw;
+          height: 100vh;
+          background: #ffffff;
+          box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+          display: flex;
+          flex-direction: column;
+          box-sizing: border-box;
+          transform: translateX(0);
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Animação: Esconde empurrando para fora da tela (direita) */
+        .detail-backdrop.hidden .detail-aside {
+          transform: translateX(100%);
+        }
+
+        /* Cabeçalho Fixo no topo do Aside */
+        .detail-header {
+          padding: 20px 24px;
+          border-bottom: 1px solid #edf2f7;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background-color: #ffffff;
+          flex-shrink: 0;
+        }
+
+        .detail-title-group { display: flex; flex-direction: column; gap: 4px; }
+        .detail-ticket-badge { font-size: 0.8rem; font-weight: 700; color: #3182ce; background-color: #ebf8ff; padding: 2px 8px; border-radius: 6px; width: fit-content; }
+        .detail-student-name { font-size: 1.1rem; font-weight: 700; color: #2d3748; margin: 0; }
+        .detail-close-btn { background: transparent; border: none; font-size: 1.25rem; color: #a0aec0; cursor: pointer; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s; }
+        .detail-close-btn:hover { background-color: #edf2f7; color: #4a5568; }
+
+        /* Corpo rolável (Scroll Interno) */
+        .detail-body {
+          flex: 1;
+          overflow-y: auto;
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .detail-info-grid { display: flex; flex-direction: column; gap: 14px; }
+        .info-group { display: flex; flex-direction: column; gap: 2px; }
+        .info-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #8fa0b0; }
+        .info-value { font-size: 0.9rem; font-weight: 500; color: #2c3e50; word-break: break-word; }
+        .detail-status-section { border-top: 1px dashed #e1e8ed; padding-top: 16px; margin-top: 8px; }
+      `;
+            document.head.appendChild(style);
+        }
+
+        // -------------------------------------------------------------------------
+        // 2. ESTRUTURA HTML (Templates Visuais)
+        // -------------------------------------------------------------------------
+        function getDetailHTML(item) {
+            if (!item) return '';
+
+            const questao = item.questaoNum ? `Questão ${item.questaoNum}` : '-';
+            const prova = item.idProva || '-';
+            const dataHora = item.dataHora || item.dataCriacao || '-';
+            const assunto = item.assuntoPrincipal || '-';
+
+            return `
+        <aside class="detail-aside" onclick="event.stopPropagation()">
+          <div class="detail-header">
+            <div class="detail-title-group">
+              <span class="detail-ticket-badge">Ticket #${item.ticket}</span>
+              <h3 class="detail-student-name">${item.nomeCompleto || 'Aluno não informado'}</h3>
+            </div>
+            <button class="detail-close-btn" onclick="window.RespostaDetail.fechar()" title="Fechar (ESC)">✕</button>
+          </div>
+
+          <div class="detail-body">
+            <div class="detail-info-grid">
+              <div class="info-group">
+                <span class="info-label">Assunto / Questão</span>
+                <span class="info-value">${questao}</span>
+              </div>
+
+              <div class="info-group">
+                <span class="info-label">Prova</span>
+                <span class="info-value">${prova}</span>
+              </div>
+
+              <div class="info-group">
+                <span class="info-label">Responsável</span>
+                <span class="info-value">${item.responsavel || 'Não atribuído'}</span>
+              </div>
+
+              <div class="info-group">
+                <span class="info-label">Data e Hora</span>
+                <span class="info-value">${dataHora}</span>
+              </div>
+
+              <div class="info-group">
+                <span class="info-label">Assunto</span>
+                <span class="info-value">${assunto}</span>
+              </div>
+            </div>
+
+            <!-- Área reativa para os formulários de cada Tab -->
+            <div class="detail-status-section" id="detail-tab-content">
+              <!-- Conteúdo da tab injetado aqui -->
+            </div>
+          </div>
+        </aside>
+      `;
+        }
+
+        // -------------------------------------------------------------------------
+        // 3. SCRIPT E INTERAÇÕES (Lógica de Overlay e Eventos)
+        // -------------------------------------------------------------------------
+        window.RespostaDetail = function () {
+            // Wrapper escuro (Backdrop)
+            const backdrop = document.createElement('div');
+            backdrop.className = 'detail-backdrop hidden';
+
+            // Clique fora fecha o Aside
+            backdrop.onclick = function () {
+                window.RespostaDetail.fechar();
+            };
+
+            function render(state) {
+                const ticketSelecionado = state?.ticketSelecionado;
+                const respostas = state?.respostas || [];
+
+                // Oculta o Aside
+                if (!ticketSelecionado) {
+                    backdrop.classList.add('hidden');
+                    setTimeout(() => {
+                        if (backdrop.classList.contains('hidden')) backdrop.innerHTML = '';
+                    }, 300); // Aguarda término da animação CSS
+                    return;
+                }
+
+                const item = respostas.find(r => r.ticket === ticketSelecionado);
+
+                if (!item) {
+                    backdrop.classList.add('hidden');
+                    return;
+                }
+
+                backdrop.innerHTML = getDetailHTML(item);
+
+                // Força reflow para disparar animação suave
+                requestAnimationFrame(() => {
+                    backdrop.classList.remove('hidden');
+                });
+            }
+
+            // Suporte para fechar ao pressionar a tecla ESC
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && window.AppStore.getState().ticketSelecionado) {
+                    window.RespostaDetail.fechar();
+                }
+            });
+
+            window.AppStore.subscribe(render);
+            render(window.AppStore.getState());
+
+            return backdrop;
+        };
+
+        // Ação global de fechar
+        window.RespostaDetail.fechar = function () {
+            window.AppStore.setState({ ticketSelecionado: null });
+        };
+    })();
+</script>

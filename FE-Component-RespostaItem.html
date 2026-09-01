@@ -1,0 +1,75 @@
+<!--
+  =============================================================================
+  COMPONENTE: RespostaItem
+  =============================================================================
+  RESPONSABILIDADE:
+    Renderizar uma linha individual (item) correspondente a um atendimento na 
+    grid da tabela, exibindo: Status, Ticket, Aluno, Prova/Questão e Responsável.
+
+  COMPORTAMENTO:
+    - Renderiza uma string HTML com classe `ticket-row` ajustada ao subgrid do container.
+    - Clicável: Captura o evento de clique na linha do ticket e dispara manipulador de evento.
+
+  MODO DE USO:
+    const htmlItem = window.RespostaItem(objetoResposta);
+    // Deve ser inserido dentro do container .ticket-table
+  =============================================================================
+-->
+
+<script>
+  (function () {
+    // -------------------------------------------------------------------------
+    // 1. ESTILOS (CSS Isolado)
+    // -------------------------------------------------------------------------
+    const styleId = 'style-resposta-item';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        .ticket-row { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; padding: 12px; transition: background-color 0.2s ease; cursor: pointer; border-radius: 8px; }
+        .ticket-row:hover, .ticket-row.selected { background-color: #f0f4f8; }
+        .ticket-row.hidden { display: none; }
+        .cell { font-size: 0.85em; color: #2c3e50; font-weight: 500; }
+        .cell-prova { width: 100%; }
+        .cell-responsible { padding-left: 20px; border-left: 1px dashed #d1dce5; }
+        .cell-status-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .badge { display: inline-block; padding: 4px 10px; font-size: 0.75em; font-weight: 700; text-transform: uppercase; border-radius: 100px; background-color: #fed7d7; color: #9b2c2c; }
+        .badge-nao-publicado { background-color: #feebc8; color: #c05621; padding: 2px 8px; border-radius: 12px; font-weight: bold; display: inline-block; white-space: nowrap; }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. ESTRUTURA HTML (Templates Visuais)
+    // -------------------------------------------------------------------------
+    window.RespostaItem = function (resposta) {
+      const statusClass = resposta.status === 'Não Publicado' ? 'badge-nao-publicado' : 'badge';
+
+      const provaQuestao = [resposta.idProva, resposta.questaoNum ? `Q${resposta.questaoNum}` : '']
+        .filter(Boolean)
+        .join(' - ') || '-';
+
+      return `
+        <div class="ticket-row" id="item-${resposta.ticket}" onclick="window.RespostaItem.handleClick('${resposta.ticket}')">
+          <div class="cell cell-status-group">
+            <span class="${statusClass}">${resposta.status || 'Pendente'}</span>
+          </div>
+          <span class="cell"><strong>${resposta.ticket || '-'}</strong></span>
+          <span class="cell">${resposta.nomeCompleto || '-'}</span>
+          <span class="cell cell-prova">${provaQuestao}</span>
+          <div class="cell cell-responsible">
+            ${resposta.responsavel || '-'}
+          </div>
+        </div>
+      `;
+    };
+
+    // -------------------------------------------------------------------------
+    // 3. SCRIPT E INTERAÇÕES (Lógica de Eventos)
+    // -------------------------------------------------------------------------
+    window.RespostaItem.handleClick = function (ticket) {
+      // Atualiza o ticket selecionado no Estado Global
+      window.AppStore.setState({ ticketSelecionado: ticket });
+    };
+  })();
+</script>

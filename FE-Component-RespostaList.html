@@ -1,0 +1,105 @@
+<!--
+  =============================================================================
+  COMPONENTE: RespostaList
+  =============================================================================
+  RESPONSABILIDADE:
+    Container principal da tabela de atendimentos/respostas. Gerencia a
+    renderização da estrutura da grid, do cabeçalho fixo das colunas e
+    alterna dinamicamente entre os estados de Carregamento, Vazio e Tabela.
+
+  COMPORTAMENTO:
+    - Reativo: Inscreve-se na `window.AppStore` e atualiza a interface a cada mudança de estado.
+    - Composição: Instancia e encadeia múltiplos `RespostaItem` dentro da grid.
+
+  MODO DE USO:
+    const elementoLista = window.RespostaList();
+    document.getElementById('container').appendChild(elementoLista);
+  =============================================================================
+-->
+
+<script>
+  (function () {
+    // -------------------------------------------------------------------------
+    // 1. ESTILOS (CSS Isolado)
+    // -------------------------------------------------------------------------
+    const styleId = 'style-resposta-list';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        .table-container { background: #fff; border: 1px solid #e1e8ed; border-radius: 16px; padding: 16px 20px; flex: 1; display: flex; flex-direction: column; overflow-x: auto; }
+        .ticket-table { display: grid; grid-template-columns: max-content max-content 1fr 1fr max-content; gap: 10px 24px; align-items: center; white-space: nowrap; }
+        .header-row { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; padding: 8px 12px; background: #f0f4f8; border-radius: 8px; }
+        .header-cell { color: #8fa0b0; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; }
+        .loading-overlay, .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; color: #718096; flex: 1; }
+        .spinner { border: 3px solid #e2e8f0; border-top-color: #3182ce; border-radius: 50%; width: 24px; height: 24px; animation: spin .8s linear infinite; margin-bottom: 12px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. ESTRUTURA HTML (Templates Visuais)
+    // -------------------------------------------------------------------------
+    function getLoadingHTML() {
+      return `
+        <div class="loading-overlay">
+          <div class="spinner"></div>
+          Carregando...
+        </div>`;
+    }
+
+    function getEmptyHTML() {
+      return `<div class="empty-state">Nenhuma resposta encontrada.</div>`;
+    }
+
+    function getTableHTML(respostas) {
+      return `
+        <div class="ticket-table">
+          <div class="header-row">
+            <span class="header-cell">Status</span>
+            <span class="header-cell">Ticket</span>
+            <span class="header-cell">Aluno</span>
+            <span class="header-cell">Prova / Questão</span>
+            <span class="header-cell">Responsável</span>
+          </div>
+          ${respostas.map(item => window.RespostaItem(item)).join('')}
+        </div>`;
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. SCRIPT E INTERAÇÕES (Lógica de Inicialização e Reatividade)
+    // -------------------------------------------------------------------------
+    window.RespostaList = function () {
+      const container = document.createElement('div');
+      container.className = 'table-container';
+
+      function render(state) {
+        let respostas = state?.respostas || [];
+        const filtro = state?.filtro || '';
+
+        if (state?.loading) {
+          container.innerHTML = getLoadingHTML();
+          return;
+        }
+
+        // Filtra as respostas com base no status selecionado na Tab
+        if (filtro) {
+          respostas = respostas.filter(r => r.status === filtro);
+        }
+
+        if (!respostas.length) {
+          container.innerHTML = getEmptyHTML();
+          return;
+        }
+
+        container.innerHTML = getTableHTML(respostas);
+      }
+
+      window.AppStore.subscribe(render);
+      render(window.AppStore.getState());
+
+      return container;
+    };
+  })();
+</script>
