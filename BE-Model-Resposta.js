@@ -2,7 +2,7 @@ class Resposta {
   constructor(dados = {}) {
     this.rowIndex = dados.rowIndex;
     this.ticket = dados.ticket;
-    this.dataHora = dados.dataHora;
+    this.dataHora = this._formatarDataHora(dados.dataHora);
     this.emailPessoal = dados.emailPessoal;
     this.emailInstitucional = dados.emailInstitucional;
     this.nomeCompleto = dados.nomeCompleto;
@@ -23,6 +23,13 @@ class Resposta {
     this.motivo = dados.motivo;
     this.responsavel = dados.responsavel;
     this.reenvios = dados.reenvios || [];
+  }
+
+  _formatarDataHora(valor) {
+    if (!valor) return '';
+    return valor instanceof Date
+      ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'medium' }).format(valor)
+      : String(valor);
   }
 
   adicionarReenvio(reenvio) {
