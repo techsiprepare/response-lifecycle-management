@@ -8,6 +8,7 @@
 
   COMPORTAMENTO:
     - Renderiza uma string HTML com classe `ticket-row` ajustada ao subgrid do container.
+    - Aplica estilização e cores automatizadas ao badge de acordo com o status.
     - Clicável: Captura o evento de clique na linha do ticket e dispara manipulador de evento.
 
   MODO DE USO:
@@ -19,7 +20,7 @@
 <script>
   (function () {
     // -------------------------------------------------------------------------
-    // 1. ESTILOS (CSS Isolado)
+    // 1. ESTILOS (CSS Isolado com Cores por Status)
     // -------------------------------------------------------------------------
     const styleId = 'style-resposta-item';
     if (!document.getElementById(styleId)) {
@@ -33,17 +34,53 @@
         .cell-prova { width: 100%; }
         .cell-responsible { padding-left: 20px; border-left: 1px dashed #d1dce5; }
         .cell-status-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-        .badge { display: inline-block; padding: 4px 10px; font-size: 0.75em; font-weight: 700; text-transform: uppercase; border-radius: 100px; background-color: #fed7d7; color: #9b2c2c; }
-        .badge-nao-publicado { background-color: #feebc8; color: #c05621; padding: 2px 8px; border-radius: 12px; font-weight: bold; display: inline-block; white-space: nowrap; }
+        
+        /* Classe Base do Badge */
+        .badge { display: inline-block; padding: 4px 10px; font-size: 0.75em; font-weight: 700; text-transform: uppercase; border-radius: 100px; white-space: nowrap; }
+
+        /* Cores Específicas por Status */
+        .badge-default { background-color: #edf2f7; color: #4a5568; }
+        .badge-novo { background-color: #ebf8ff; color: #2b6cb0; }
+        .badge-em-analise { background-color: #feebc8; color: #c05621; }
+        .badge-pronto-analise { background-color: #ebf8ff; color: #3182ce; }
+        .badge-pronto-reanalise { background-color: #e9d8fd; color: #6b46c1; }
+        .badge-devolvido { background-color: #feefc3; color: #b7791f; }
+        .badge-aprovado { background-color: #c6f6d5; color: #22543d; }
+        .badge-rejeitado { background-color: #fed7d7; color: #9b2c2c; }
+        .badge-nao-publicado { background-color: #feebc8; color: #c05621; }
       `;
       document.head.appendChild(style);
     }
 
     // -------------------------------------------------------------------------
-    // 2. ESTRUTURA HTML (Templates Visuais)
+    // 2. MAPEAMENTO AUTOMATIZADO DE STATUS PARA CLASSES CSS
+    // -------------------------------------------------------------------------
+    const STATUS_CLASS_MAP = Object.freeze({
+      'Novo': 'badge-novo',
+      'Em análise': 'badge-em-analise',
+      'Pronto p/ Análise': 'badge-pronto-analise',
+      'Pronto p/ Reanálise': 'badge-pronto-reanalise',
+      'Devolvido p/ Ajustes': 'badge-devolvido',
+      'Aprovado': 'badge-aprovado',
+      'Rejeitado': 'badge-rejeitado',
+      'Não Publicado': 'badge-nao-publicado'
+    });
+
+    /**
+     * Retorna a classe CSS correspondente ao status informado.
+     * @param {string} status 
+     * @returns {string} Classe CSS isolada
+     */
+    function getStatusClass(status) {
+      return STATUS_CLASS_MAP[status] || 'badge-default';
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. ESTRUTURA HTML (Templates Visuais)
     // -------------------------------------------------------------------------
     window.RespostaItem = function (resposta) {
-      const statusClass = resposta.status === 'Não Publicado' ? 'badge-nao-publicado' : 'badge';
+      const statusText = resposta.status || 'Pendente';
+      const statusClass = getStatusClass(resposta.status);
 
       const provaQuestao = [resposta.idProva, resposta.questaoNum ? `Q${resposta.questaoNum}` : '']
         .filter(Boolean)
@@ -52,7 +89,7 @@
       return `
         <div class="ticket-row" id="item-${resposta.ticket}" onclick="window.RespostaItem.handleClick('${resposta.ticket}')">
           <div class="cell cell-status-group">
-            <span class="${statusClass}">${resposta.status || 'Pendente'}</span>
+            <span class="badge ${statusClass}">${statusText}</span>
           </div>
           <span class="cell"><strong>${resposta.ticket || '-'}</strong></span>
           <span class="cell">${resposta.nomeCompleto || '-'}</span>
@@ -65,7 +102,7 @@
     };
 
     // -------------------------------------------------------------------------
-    // 3. SCRIPT E INTERAÇÕES (Lógica de Eventos)
+    // 4. SCRIPT E INTERAÇÕES (Lógica de Eventos)
     // -------------------------------------------------------------------------
     window.RespostaItem.handleClick = function (ticket) {
       // Atualiza o ticket selecionado no Estado Global

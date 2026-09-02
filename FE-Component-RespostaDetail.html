@@ -19,15 +19,15 @@
 -->
 
 <script>
-    (function () {
-        // -------------------------------------------------------------------------
-        // 1. ESTILOS (CSS Isolado com Animação e Overlay)
-        // -------------------------------------------------------------------------
-        const styleId = 'style-resposta-detail';
-        if (!document.getElementById(styleId)) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.textContent = `
+  (function () {
+    // -------------------------------------------------------------------------
+    // 1. ESTILOS (CSS Isolado com Animação e Overlay)
+    // -------------------------------------------------------------------------
+    const styleId = 'style-resposta-detail';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
         /* Fundo escurecido fixo que sobrepõe tudo */
         .detail-backdrop {
           position: fixed;
@@ -83,8 +83,7 @@
         }
 
         .detail-title-group { display: flex; flex-direction: column; gap: 4px; }
-        .detail-ticket-badge { font-size: 0.8rem; font-weight: 700; color: #3182ce; background-color: #ebf8ff; padding: 2px 8px; border-radius: 6px; width: fit-content; }
-        .detail-student-name { font-size: 1.1rem; font-weight: 700; color: #2d3748; margin: 0; }
+        .detail-ticket-badge { font-size: 0.8rem; font-weight: 700; color: #4e4e4e; background-color: #edf2f7; padding: 2px 8px; border-radius: 6px; width: fit-content; }
         .detail-close-btn { background: transparent; border: none; font-size: 1.25rem; color: #a0aec0; cursor: pointer; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s; }
         .detail-close-btn:hover { background-color: #edf2f7; color: #4a5568; }
 
@@ -104,124 +103,143 @@
         .info-value { font-size: 0.9rem; font-weight: 500; color: #2c3e50; word-break: break-word; }
         .detail-status-section { border-top: 1px dashed #e1e8ed; padding-top: 16px; margin-top: 8px; }
       `;
-            document.head.appendChild(style);
+      document.head.appendChild(style);
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. ESTRUTURA HTML (Templates Visuais)
+    // -------------------------------------------------------------------------
+    function getDetailHTML(item) {
+      if (!item) return '';
+
+      const questao = item.questaoNum ? `Questão ${item.questaoNum}` : '-';
+      const tipoQuestao = item.tipo ? item.tipo : 'Tipo não informado.';
+      const prova = item.idProva || '-';
+      const dataHora = item.dataHora || item.dataCriacao || '-';
+      const assunto = item.assuntoPrincipal || 'Assunto não informado.';
+      const preCuradoria = item.preCuradoria || 'Pré-curadoria inexistente.';
+      const motivo = item.motivo || 'Sem observações...';
+      const responsavel = item.responsavel || 'Não atribuído';
+      const nomeAluno = item.nomeCompleto || 'Aluno não informado';
+
+      return `
+            <aside class="detail-aside" onclick="event.stopPropagation()">
+              <div class="detail-header">
+                <div class="detail-title-group">
+                  <span class="detail-ticket-badge">${item.ticket}</span>
+                </div>
+                <button class="detail-close-btn" onclick="window.RespostaDetail.fechar()" title="Fechar (ESC)">✕</button>
+              </div>
+
+              <div class="detail-body">
+                <div class="detail-info-grid">
+                  
+                  <div class="info-group">
+                    <span class="info-label">Aluno</span>
+                    <span class="info-value">${nomeAluno}</span>
+                  </div>
+
+                  <div class="info-group">
+                    <span class="info-label">Questão</span>
+                    <span class="info-value">${questao} - ${tipoQuestao}</span>
+                  </div>
+
+                  <div class="info-group">
+                    <span class="info-label">Prova</span>
+                    <span class="info-value">${prova}</span>
+                  </div>
+
+                  <div class="info-group">
+                    <span class="info-label">Responsável</span>
+                    <span class="info-value">${responsavel}</span>
+                  </div>
+
+                  <div class="info-group">
+                    <span class="info-label">Data e Hora</span>
+                    <span class="info-value">${dataHora}</span>
+                  </div>
+
+                  <div class="info-group">
+                    <span class="info-label">Assunto</span>
+                    <span class="info-value">${assunto}</span>
+                  </div>
+
+                  <div class="info-group">
+                    <span class="info-label">Pré-Curadoria</span>
+                    <span class="info-value">${preCuradoria}</span>
+                  </div>
+
+                  <div class="info-group">
+                    <span class="info-label">Observações</span>
+                    <span class="info-value">${motivo}</span>
+                  </div>                  
+                </div>
+
+                <div class="detail-status-section" id="detail-tab-content">
+                  ${window.RespostaDetailSection.render(item)}
+                </div>
+              </div>
+            </aside>
+          `;
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. SCRIPT E INTERAÇÕES (Lógica de Overlay e Eventos)
+    // -------------------------------------------------------------------------
+    window.RespostaDetail = function () {
+      // Wrapper escuro (Backdrop)
+      const backdrop = document.createElement('div');
+      backdrop.className = 'detail-backdrop hidden';
+
+      // Clique fora fecha o Aside
+      backdrop.onclick = function () {
+        window.RespostaDetail.fechar();
+      };
+
+      function render(state) {
+        const ticketSelecionado = state?.ticketSelecionado;
+        const respostas = state?.respostas || [];
+
+        // Oculta o Aside
+        if (!ticketSelecionado) {
+          backdrop.classList.add('hidden');
+          setTimeout(() => {
+            if (backdrop.classList.contains('hidden')) backdrop.innerHTML = '';
+          }, 300); // Aguarda término da animação CSS
+          return;
         }
 
-        // -------------------------------------------------------------------------
-        // 2. ESTRUTURA HTML (Templates Visuais)
-        // -------------------------------------------------------------------------
-        function getDetailHTML(item) {
-            if (!item) return '';
+        const item = respostas.find(r => r.ticket === ticketSelecionado);
 
-            const questao = item.questaoNum ? `Questão ${item.questaoNum}` : '-';
-            const prova = item.idProva || '-';
-            const dataHora = item.dataHora || item.dataCriacao || '-';
-            const assunto = item.assuntoPrincipal || '-';
-
-            return `
-        <aside class="detail-aside" onclick="event.stopPropagation()">
-          <div class="detail-header">
-            <div class="detail-title-group">
-              <span class="detail-ticket-badge">Ticket #${item.ticket}</span>
-              <h3 class="detail-student-name">${item.nomeCompleto || 'Aluno não informado'}</h3>
-            </div>
-            <button class="detail-close-btn" onclick="window.RespostaDetail.fechar()" title="Fechar (ESC)">✕</button>
-          </div>
-
-          <div class="detail-body">
-            <div class="detail-info-grid">
-              <div class="info-group">
-                <span class="info-label">Assunto / Questão</span>
-                <span class="info-value">${questao}</span>
-              </div>
-
-              <div class="info-group">
-                <span class="info-label">Prova</span>
-                <span class="info-value">${prova}</span>
-              </div>
-
-              <div class="info-group">
-                <span class="info-label">Responsável</span>
-                <span class="info-value">${item.responsavel || 'Não atribuído'}</span>
-              </div>
-
-              <div class="info-group">
-                <span class="info-label">Data e Hora</span>
-                <span class="info-value">${dataHora}</span>
-              </div>
-
-              <div class="info-group">
-                <span class="info-label">Assunto</span>
-                <span class="info-value">${assunto}</span>
-              </div>
-            </div>
-
-            <!-- Área reativa para os formulários de cada Tab -->
-            <div class="detail-status-section" id="detail-tab-content">
-              <!-- Conteúdo da tab injetado aqui -->
-            </div>
-          </div>
-        </aside>
-      `;
+        if (!item) {
+          backdrop.classList.add('hidden');
+          return;
         }
 
-        // -------------------------------------------------------------------------
-        // 3. SCRIPT E INTERAÇÕES (Lógica de Overlay e Eventos)
-        // -------------------------------------------------------------------------
-        window.RespostaDetail = function () {
-            // Wrapper escuro (Backdrop)
-            const backdrop = document.createElement('div');
-            backdrop.className = 'detail-backdrop hidden';
+        backdrop.innerHTML = getDetailHTML(item);
 
-            // Clique fora fecha o Aside
-            backdrop.onclick = function () {
-                window.RespostaDetail.fechar();
-            };
+        // Força reflow para disparar animação suave
+        requestAnimationFrame(() => {
+          backdrop.classList.remove('hidden');
+        });
+      }
 
-            function render(state) {
-                const ticketSelecionado = state?.ticketSelecionado;
-                const respostas = state?.respostas || [];
+      // Suporte para fechar ao pressionar a tecla ESC
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && window.AppStore.getState().ticketSelecionado) {
+          window.RespostaDetail.fechar();
+        }
+      });
 
-                // Oculta o Aside
-                if (!ticketSelecionado) {
-                    backdrop.classList.add('hidden');
-                    setTimeout(() => {
-                        if (backdrop.classList.contains('hidden')) backdrop.innerHTML = '';
-                    }, 300); // Aguarda término da animação CSS
-                    return;
-                }
+      window.AppStore.subscribe(render);
+      render(window.AppStore.getState());
 
-                const item = respostas.find(r => r.ticket === ticketSelecionado);
+      return backdrop;
+    };
 
-                if (!item) {
-                    backdrop.classList.add('hidden');
-                    return;
-                }
-
-                backdrop.innerHTML = getDetailHTML(item);
-
-                // Força reflow para disparar animação suave
-                requestAnimationFrame(() => {
-                    backdrop.classList.remove('hidden');
-                });
-            }
-
-            // Suporte para fechar ao pressionar a tecla ESC
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && window.AppStore.getState().ticketSelecionado) {
-                    window.RespostaDetail.fechar();
-                }
-            });
-
-            window.AppStore.subscribe(render);
-            render(window.AppStore.getState());
-
-            return backdrop;
-        };
-
-        // Ação global de fechar
-        window.RespostaDetail.fechar = function () {
-            window.AppStore.setState({ ticketSelecionado: null });
-        };
-    })();
+    // Ação global de fechar
+    window.RespostaDetail.fechar = function () {
+      window.AppStore.setState({ ticketSelecionado: null });
+    };
+  })();
 </script>

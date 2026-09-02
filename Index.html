@@ -7,6 +7,16 @@
     <title>Gerenciamento de Respostas</title>
 </head>
 
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #3d4a57;
+        background-color: #fdfdfd;
+        padding: 20px;
+        margin: 0;
+    }
+</style>
+
 <body>
     <div id="app"></div>
 
@@ -16,6 +26,8 @@
     <?!= include('FE-Component-RespostaList'); ?>
     <?!= include('FE-Component-RespostaSection'); ?>
     <?!= include('FE-Component-RespostaDetail'); ?>
+    <?!= include('FE-Component-RespostaDetailSection'); ?>
+    <?!= include('FE-Component-Buttons'); ?>
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {

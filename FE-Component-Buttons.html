@@ -1,0 +1,280 @@
+<!--
+ =============================================================================
+ COMPONENTE: Buttons (Com Padrão Strategy)
+ =============================================================================
+ RESPONSABILIDADE:
+ Renderiza e executa botões com base em Estratégias pré-configuradas e imutáveis.
+ 
+ PADRÃO STRATEGY:
+ Cada botão representa uma estratégia concreta (com label, estilo e execução).
+ O Buttons atua como o Contexto que executa a estratégia selecionada.
+ =============================================================================
+-->
+
+<script>
+    (function () {
+        // -------------------------------------------------------------------------
+        // 1. ESTILOS (CSS Isolado com Classes Específicas por Botão)
+        // -------------------------------------------------------------------------
+        const styleId = 'style-app-button';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+        /* Classe Base */
+        .app-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px 16px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          gap: 6px;
+          white-space: nowrap;
+          width: 100%;
+        }
+        .app-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Classes Individuais por Botão */
+        .app-btn-ver-video-aluno { background-color: #edf2f7; color: #4e4e4e; }
+        .app-btn-ver-video-aluno:hover:not(:disabled) { background-color: #e2e8f0; }
+
+        .app-btn-ver-questao-site { background-color: #edf2f7; color: #4e4e4e; }
+        .app-btn-ver-questao-site:hover:not(:disabled) { background-color: #e2e8f0; }
+
+        .app-btn-abrir-gmail-buscar-ticket { background-color: #edf2f7; color: #4e4e4e; }
+        .app-btn-abrir-gmail-buscar-ticket:hover:not(:disabled) { background-color: #e2e8f0; }
+
+        .app-btn-ver-autorizacao { background-color: #edf2f7; color: #4e4e4e; }
+        .app-btn-ver-autorizacao:hover:not(:disabled) { background-color: #e2e8f0; }
+
+        .app-btn-enviar-barema-aluno { background-color: #edf2f7; color: #4e4e4e; }
+        .app-btn-enviar-barema-aluno:hover:not(:disabled) { background-color: #e2e8f0; }
+
+        .app-btn-solicitar-avaliacao-professor { background-color: #edf2f7; color: #4e4e4e; }
+        .app-btn-solicitar-avaliacao-professor:hover:not(:disabled) { background-color: #e2e8f0; }
+
+        .app-btn-aprovar-ticket { background-color: #38a169; color: #ffffff; }
+        .app-btn-aprovar-ticket:hover:not(:disabled) { background-color: #2f855a; }
+
+        .app-btn-devolver-ajustes { background-color: #edf2f7; color: #4e4e4e; }
+        .app-btn-devolver-ajustes:hover:not(:disabled) { background-color: #e2e8f0; }
+
+        .app-btn-rejeitar-ticket { background-color: #e53e3e; color: #ffffff; }
+        .app-btn-rejeitar-ticket:hover:not(:disabled) { background-color: #c53030; }
+
+        .app-btn-mudar-pronto-reanalise { background-color: #6b46c1; color: #e9d8fd; }
+        .app-btn-mudar-pronto-reanalise:hover:not(:disabled) { background-color: #6b46c1; }
+
+        .app-btn-mudar-pronto-para-analise { background-color: #3182ce; color: #ffffff; }
+        .app-btn-mudar-pronto-para-analise:hover:not(:disabled) { background-color: #1d61a0; }
+
+        .app-btn-mudar-em-analise { background-color: #dd6b20; color: #ffffff; }
+        .app-btn-mudar-em-analise:hover:not(:disabled) { background-color: #c05621; }
+
+        .app-btn-salvar-link-video { background-color: #edf2f7; color: #4e4e4e; }
+        .app-btn-salvar-link-video:hover:not(:disabled) { background-color: #e2e8f0; }
+      `;
+            document.head.appendChild(style);
+        }
+
+        // -------------------------------------------------------------------------
+        // 2. CONTRATO DAS ESTRATÉGIAS (Interfaces/Classes das Estratégias)
+        // -------------------------------------------------------------------------
+        class ButtonStrategy {
+            constructor(label, className) {
+                this.label = label;
+                this.className = className;
+            }
+
+            // Método da estratégia que executa a ação baseada no ticketId
+            execute(ticketId) {
+                throw new Error("O método execute() deve ser implementado pela estratégia concreta.");
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // ESTRATÉGIAS CONCRETAS PRÉ-DEFINIDAS (Nomes semânticos)
+        // -------------------------------------------------------------------------
+
+        class VerVideoAluno extends ButtonStrategy {
+            constructor() {
+                super('Ver Vídeo do Aluno', 'app-btn-ver-video-aluno');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Ver Vídeo do Aluno] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class VerQuestaoSite extends ButtonStrategy {
+            constructor() {
+                super('Ver Questão no Site', 'app-btn-ver-questao-site');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Ver Questão no Site] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class AbrirGmailBuscarTicket extends ButtonStrategy {
+            constructor() {
+                super('Abrir Gmail (Buscar Ticket)', 'app-btn-abrir-gmail-buscar-ticket');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Abrir Gmail] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class VerAutorizacao extends ButtonStrategy {
+            constructor() {
+                super('Ver Autorização', 'app-btn-ver-autorizacao');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Ver Autorização] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class EnviarBaremaAluno extends ButtonStrategy {
+            constructor() {
+                super('Enviar Barema para Aluno', 'app-btn-enviar-barema-aluno');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Enviar Barema para Aluno] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class SolicitarAvaliacaoProfessor extends ButtonStrategy {
+            constructor() {
+                super('Solicitar Avaliação p/ Professor', 'app-btn-solicitar-avaliacao-professor');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Solicitar Avaliação p/ Professor] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class AprovarTicket extends ButtonStrategy {
+            constructor() {
+                super('Aprovar Ticket', 'app-btn-aprovar-ticket');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Aprovar Ticket] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class DevolverAjustes extends ButtonStrategy {
+            constructor() {
+                super('Devolver p/ Ajustes', 'app-btn-devolver-ajustes');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Devolver p/ Ajustes] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class RejeitarTicket extends ButtonStrategy {
+            constructor() {
+                super('Rejeitar Ticket', 'app-btn-rejeitar-ticket');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Rejeitar Ticket] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class MudarProntoReanalise extends ButtonStrategy {
+            constructor() {
+                super('Mudar p/ Pronto p/ Reanálise', 'app-btn-mudar-pronto-reanalise');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Mudar p/ Pronto p/ Reanálise] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class MudarProntoParaAnalise extends ButtonStrategy {
+            constructor() {
+                super('Mudar p/ Pronto p/ Análise', 'app-btn-mudar-pronto-para-analise');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Mudar p/ Pronto p/ Análise] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class MudarEmAnalise extends ButtonStrategy {
+            constructor() {
+                super('Mudar p/ Em análise', 'app-btn-mudar-em-analise');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Mudar p/ Em análise] Processando ticket #${ticketId}`);
+            }
+        }
+
+        class SalvarLinkVideo extends ButtonStrategy {
+            constructor() {
+                super('Salvar Link do Vídeo', 'app-btn-salvar-link-video');
+            }
+            execute(ticketId) {
+                console.log(`[Ação: Salvar Link do Vídeo] Processando ticket #${ticketId}`);
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // 3. REGISTRO ESTÁTICO DE ESTRATÉGIAS (Pré-configuradas)
+        // -------------------------------------------------------------------------
+        const STRATEGIES = Object.freeze({
+            'ver_video_aluno': new VerVideoAluno(),
+            'ver_questao_site': new VerQuestaoSite(),
+            'abrir_gmail_buscar_ticket': new AbrirGmailBuscarTicket(),
+            'ver_autorizacao': new VerAutorizacao(),
+            'enviar_barema_aluno': new EnviarBaremaAluno(),
+            'solicitar_avaliacao_professor': new SolicitarAvaliacaoProfessor(),
+            'aprovar_ticket': new AprovarTicket(),
+            'devolver_ajustes': new DevolverAjustes(),
+            'rejeitar_ticket': new RejeitarTicket(),
+            'mudar_pronto_reanalise': new MudarProntoReanalise(),
+            'mudar_pronto_para_analise': new MudarProntoParaAnalise(),
+            'mudar_em_analise': new MudarEmAnalise(),
+            'salvar_link_video': new SalvarLinkVideo()
+        });
+
+        // -------------------------------------------------------------------------
+        // 4. CONTEXTO / FAÇADE PÚBLICA (Buttons)
+        // -------------------------------------------------------------------------
+        window.Buttons = {
+            /**
+             * Renderiza o botão a partir de uma estratégia pré-configurada.
+             * @param {string} strategyKey - Chave da estratégia pré-definida ('aprovar_ticket', 'ver_video_aluno', etc.)
+             * @param {string|number} ticketId - ID do ticket obrigatório para o contexto da execução
+             */
+            render: function (strategyKey, ticketId) {
+                const strategy = STRATEGIES[strategyKey];
+
+                if (!strategy) {
+                    console.error(`Estratégia "${strategyKey}" não foi encontrada no Buttons.`);
+                    return '';
+                }
+
+                return `
+          <button 
+            type="button"
+            class="app-btn ${strategy.className}"
+            onclick="window.Buttons.executar('${strategyKey}', '${ticketId}')">
+            ${strategy.label}
+          </button>
+        `;
+            },
+
+            /**
+             * Delega a execução para a estratégia concreta correspondente.
+             * @param {string} strategyKey - Chave da estratégia
+             * @param {string|number} ticketId - ID do ticket
+             */
+            executar: function (strategyKey, ticketId) {
+                const strategy = STRATEGIES[strategyKey];
+                if (strategy) {
+                    strategy.execute(ticketId);
+                }
+            }
+        };
+    })();
+</script>
