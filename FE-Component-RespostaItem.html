@@ -66,11 +66,6 @@
       'Não Publicado': 'badge-nao-publicado'
     });
 
-    /**
-     * Retorna a classe CSS correspondente ao status informado.
-     * @param {string} status 
-     * @returns {string} Classe CSS isolada
-     */
     function getStatusClass(status) {
       return STATUS_CLASS_MAP[status] || 'badge-default';
     }
@@ -105,7 +100,6 @@
     // 4. SCRIPT E INTERAÇÕES (Lógica de Eventos)
     // -------------------------------------------------------------------------
     window.RespostaItem.handleClick = function (ticket) {
-      // Atualiza o ticket selecionado no Estado Global
       window.AppStore.setState({ ticketSelecionado: ticket });
     };
   })();

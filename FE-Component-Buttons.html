@@ -91,7 +91,6 @@
                 this.className = className;
             }
 
-            // Método da estratégia que executa a ação baseada no ticketId
             execute(ticketId) {
                 throw new Error("O método execute() deve ser implementado pela estratégia concreta.");
             }
@@ -241,11 +240,7 @@
         // 4. CONTEXTO / FAÇADE PÚBLICA (Buttons)
         // -------------------------------------------------------------------------
         window.Buttons = {
-            /**
-             * Renderiza o botão a partir de uma estratégia pré-configurada.
-             * @param {string} strategyKey - Chave da estratégia pré-definida ('aprovar_ticket', 'ver_video_aluno', etc.)
-             * @param {string|number} ticketId - ID do ticket obrigatório para o contexto da execução
-             */
+
             render: function (strategyKey, ticketId) {
                 const strategy = STRATEGIES[strategyKey];
 
@@ -264,11 +259,6 @@
         `;
             },
 
-            /**
-             * Delega a execução para a estratégia concreta correspondente.
-             * @param {string} strategyKey - Chave da estratégia
-             * @param {string|number} ticketId - ID do ticket
-             */
             executar: function (strategyKey, ticketId) {
                 const strategy = STRATEGIES[strategyKey];
                 if (strategy) {

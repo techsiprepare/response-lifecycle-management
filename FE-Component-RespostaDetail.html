@@ -187,11 +187,9 @@
     // 3. SCRIPT E INTERAÇÕES (Lógica de Overlay e Eventos)
     // -------------------------------------------------------------------------
     window.RespostaDetail = function () {
-      // Wrapper escuro (Backdrop)
       const backdrop = document.createElement('div');
       backdrop.className = 'detail-backdrop hidden';
 
-      // Clique fora fecha o Aside
       backdrop.onclick = function () {
         window.RespostaDetail.fechar();
       };
@@ -200,12 +198,11 @@
         const ticketSelecionado = state?.ticketSelecionado;
         const respostas = state?.respostas || [];
 
-        // Oculta o Aside
         if (!ticketSelecionado) {
           backdrop.classList.add('hidden');
           setTimeout(() => {
             if (backdrop.classList.contains('hidden')) backdrop.innerHTML = '';
-          }, 300); // Aguarda término da animação CSS
+          }, 300);
           return;
         }
 
@@ -218,13 +215,11 @@
 
         backdrop.innerHTML = getDetailHTML(item);
 
-        // Força reflow para disparar animação suave
         requestAnimationFrame(() => {
           backdrop.classList.remove('hidden');
         });
       }
 
-      // Suporte para fechar ao pressionar a tecla ESC
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && window.AppStore.getState().ticketSelecionado) {
           window.RespostaDetail.fechar();
@@ -237,7 +232,6 @@
       return backdrop;
     };
 
-    // Ação global de fechar
     window.RespostaDetail.fechar = function () {
       window.AppStore.setState({ ticketSelecionado: null });
     };

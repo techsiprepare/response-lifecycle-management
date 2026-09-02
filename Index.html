@@ -20,7 +20,6 @@
 <body>
     <div id="app"></div>
 
-    <!-- Inclusão modular dos componentes e estado global -->
     <?!= include('FE-Store'); ?>
     <?!= include('FE-Component-RespostaItem'); ?>
     <?!= include('FE-Component-RespostaList'); ?>
@@ -32,14 +31,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const app = document.getElementById('app');
-
-            // Renderiza o componente SEÇÃO (que engloba as Tabs + Lista)
             app.appendChild(window.RespostaSection());
-
-            // Renderiza o componente DETALHES (que engloba as Infos + Botões e etc...)
             app.appendChild(window.RespostaDetail());
-
-            // Carrega o estado inicial do backend
             await window.AppStore.init();
         });
     </script>
