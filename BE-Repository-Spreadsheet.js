@@ -51,11 +51,11 @@ class SpreadsheetRepository {
     const lock = LockService.getScriptLock();
     try {
       lock.waitLock(10000);
-      
+
       if (!resposta.rowIndex) throw new Error("rowIndex obrigatório para salvar.");
       const respObj = new Resposta(resposta);
       const sheet = this.getSpreadsheet().getSheetByName('Gerenciamento_Respostas');
-      
+
       sheet.getRange(respObj.rowIndex, 1, 1, 21).setValues([respObj.toArray()]);
     } finally {
       lock.releaseLock();

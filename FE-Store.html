@@ -1,10 +1,17 @@
 <script>
+    function gerarSessionId() {
+        return typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : 'session_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+    }
+
     window.AppStore = {
         state: {
             respostas: [],
             loading: true,
             filtro: '',
-            ticketSelecionado: null
+            ticketSelecionado: null,
+            sessionId: gerarSessionId()
         },
         listeners: [],
 
@@ -30,9 +37,21 @@
             return this.state;
         },
 
-        setState(newState) {
+        setState(newState, salvarNoServidor = false, respostaParaSalvar = null) {
             this.state = { ...this.state, ...newState };
             this.notify();
+
+            if (salvarNoServidor && respostaParaSalvar) {
+                google.script.run
+                    .withSuccessHandler(() => {
+                        this.setState({ loading: false });
+                    })
+                    .withFailureHandler((err) => {
+                        console.error('Erro ao salvar e notificar:', err);
+                        this.setState({ loading: false });
+                    })
+                    .salvarRespostaENotificar(respostaParaSalvar, this.state.sessionId);
+            }
         },
 
         subscribe(listener) {

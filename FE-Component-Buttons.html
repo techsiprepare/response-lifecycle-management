@@ -136,7 +136,32 @@
             devolverAjustes: (ticketId) => console.log(`[Ação: Devolver p/ Ajustes] Ticket #${ticketId}`),
             rejeitarTicket: (ticketId) => console.log(`[Ação: Rejeitar Ticket] Ticket #${ticketId}`),
             mudarProntoReanalise: (ticketId) => console.log(`[Ação: Mudar p/ Pronto p/ Reanálise] Ticket #${ticketId}`),
-            mudarProntoParaAnalise: (ticketId) => console.log(`[Ação: Mudar p/ Pronto p/ Análise] Ticket #${ticketId}`),
+
+            mudarProntoParaAnalise: function (ticketId) {
+                const estadoAtual = window.AppStore.getState();
+                const respostaOriginal = estadoAtual.respostas.find(r => String(r.ticket) === String(ticketId));
+
+                if (!respostaOriginal) {
+                    console.error(`Resposta com ticket #${ticketId} não encontrada no AppStore.`);
+                    return;
+                }
+
+                const respostaAtualizada = {
+                    ...respostaOriginal,
+                    status: 'Pronto p/ Análise'
+                };
+
+                const novasRespostas = estadoAtual.respostas.map(r =>
+                    String(r.ticket) === String(ticketId) ? respostaAtualizada : r
+                );
+
+                window.AppStore.setState(
+                    { respostas: novasRespostas, loading: true },
+                    true,
+                    respostaAtualizada
+                );
+            },
+
             mudarEmAnalise: (ticketId) => console.log(`[Ação: Mudar p/ Em análise] Ticket #${ticketId}`),
             salvarLinkVideo: (ticketId) => console.log(`[Ação: Salvar Link do Vídeo] Ticket #${ticketId}`)
         };

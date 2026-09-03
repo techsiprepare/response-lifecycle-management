@@ -134,7 +134,7 @@ function testarSpreadsheetRepositoryEscritaSegura() {
 
     const itemParaAtualizar = JSON.parse(JSON.stringify(itemTeste));
     const marcaTempo = `Teste Automatizado: ${new Date().toLocaleTimeString('pt-BR')}`;
-    
+
     // Altera apenas o motivo e salva (sem restaurar o valor anterior)
     itemParaAtualizar.motivo = marcaTempo;
     repo.salvarResposta(itemParaAtualizar);
@@ -215,7 +215,7 @@ function testarControllerEErros() {
   Logger.log("\n[TESTE 6] Controller & Tratamento de Erros...");
   try {
     const repo = new SpreadsheetRepository();
-    
+
     let disparouErroEsperado = false;
     try {
       repo.salvarResposta({ ticket: 'TK-TESTE' }); // Sem rowIndex

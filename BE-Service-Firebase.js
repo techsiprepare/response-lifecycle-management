@@ -5,11 +5,15 @@ class FirebaseNotifier {
     this.secret = props.getProperty('FIREBASE_SECRET');
   }
 
-  notificar(resposta) {
+  notificar(resposta, sessionId) {
     if (!this.dbUrl) return;
 
     const url = `${this.dbUrl}/ultimo_evento.json?auth=${this.secret}`;
-    const payload = JSON.stringify({ dados: resposta, timestamp: Date.now() });
+    const payload = JSON.stringify({
+      dados: resposta,
+      sessionId: sessionId,
+      timestamp: Date.now()
+    });
 
     UrlFetchApp.fetch(url, {
       method: 'put',

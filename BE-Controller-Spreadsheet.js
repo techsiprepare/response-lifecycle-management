@@ -16,12 +16,12 @@ function carregarDadosIniciais() {
   return JSON.parse(JSON.stringify(respostas));
 }
 
-function salvarRespostaEBuscarSinal(dadosResposta) {
+function salvarRespostaENotificar(dadosResposta, sessionId) {
   const repo = new SpreadsheetRepository();
   const notifier = new FirebaseNotifier();
 
   repo.salvarResposta(dadosResposta);
-  notifier.notificar(dadosResposta);
+  notifier.notificar(dadosResposta, sessionId);
 
   return { sucesso: true };
 }
