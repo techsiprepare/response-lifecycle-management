@@ -61,4 +61,32 @@ class SpreadsheetRepository {
       lock.releaseLock();
     }
   }
+
+  getRespostaPorTicket(ticket) {
+    if (!ticket) return null;
+
+    const values = this.getSpreadsheet().getSheetByName('Gerenciamento_Respostas').getDataRange().getValues().slice(1);
+    const reenvios = this.getReenvios();
+
+    const reenviosDoTicket = reenvios.filter(r => r.ticket === ticket);
+    const rowIndexOffset = 2;
+    for (let i = 0; i < values.length; i++) {
+      const row = values[i];
+      if (String(row[0]) === String(ticket)) {
+        const resp = new Resposta({
+          rowIndex: i + rowIndexOffset, ticket: row[0], dataHora: row[1], emailPessoal: row[2],
+          emailInstitucional: row[3], nomeCompleto: row[4], telefone: row[5], ra: row[6],
+          periodo: row[7], idProva: row[8], questaoNum: row[9], tipo: row[10],
+          assuntoPrincipal: row[11], urlVideoOriginal: row[12], autorizacao: row[13],
+          urlAtualizada: row[14], autorizacaoAtualizada: row[15], urlVideoOficial: row[16],
+          preCuradoria: row[17], status: row[18], motivo: row[19], responsavel: row[20]
+        });
+
+        reenviosDoTicket.forEach(r => resp.adicionarReenvio(r));
+        return JSON.parse(JSON.stringify(resp));
+      }
+    }
+
+    return null;
+  }
 }

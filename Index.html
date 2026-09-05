@@ -21,12 +21,14 @@
     <div id="app"></div>
 
     <?!= include('FE-Store'); ?>
+    <?!= include('FE-Service-FirebaseListener'); ?>
     <?!= include('FE-Component-RespostaItem'); ?>
     <?!= include('FE-Component-RespostaList'); ?>
     <?!= include('FE-Component-RespostaSection'); ?>
     <?!= include('FE-Component-RespostaDetail'); ?>
     <?!= include('FE-Component-RespostaDetailSection'); ?>
     <?!= include('FE-Component-Buttons'); ?>
+    <?!= include('FE-Component-Toast'); ?>
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
@@ -34,6 +36,7 @@
             app.appendChild(window.RespostaSection());
             app.appendChild(window.RespostaDetail());
             await window.AppStore.init();
+            window.FirebaseListener.init(window.AppStore.horaInicioSessao);
         });
     </script>
 </body>

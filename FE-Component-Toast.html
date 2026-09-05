@@ -1,0 +1,83 @@
+<!--
+  =============================================================================
+  COMPONENTE: Toast
+  =============================================================================
+  RESPONSABILIDADE:
+    Exibir notificações temporárias (toasts) empilháveis no canto inferior
+    direito da tela, com animação de entrada e saída suaves.
+
+  COMPORTAMENTO:
+    - Cria o container de toasts sob demanda (lazy) na primeira chamada.
+    - Suporta múltiplos toasts simultâneos empilhados verticalmente.
+    - Animação: desliza para cima ao entrar e desaparece ao sair (opacity + translateY).
+    - Auto-remove: o toast é destruído do DOM após o fade-out de saída.
+
+  MODO DE USO:
+    window.FEComponenteToast.exibir({
+        texto: 'Mensagem para o usuário',
+        cor: '#2E7D32',    // Opcional. Padrão: '#323232'
+        duracao: 3000      // Opcional. Em ms. Padrão: 3000
+    });
+  =============================================================================
+-->
+
+<script>
+    (function () {
+        // -------------------------------------------------------------------------
+        // 1. ESTILOS (CSS Inline via Object.assign — sem folha de estilos separada)
+        // -------------------------------------------------------------------------
+
+        // -------------------------------------------------------------------------
+        // 2. ESTRUTURA & INTERAÇÕES (Container lazy + ciclo de vida do Toast)
+        // -------------------------------------------------------------------------
+        window.FEComponenteToast = {
+            exibir({ texto, cor = '#323232', duracao = 3000 }) {
+                let container = document.getElementById('toast-container');
+
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'toast-container';
+                    Object.assign(container.style, {
+                        position: 'fixed',
+                        bottom: '20px',
+                        right: '20px',
+                        zIndex: '9999',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px'
+                    });
+                    document.body.appendChild(container);
+                }
+
+                const toast = document.createElement('div');
+                toast.innerText = texto;
+                Object.assign(toast.style, {
+                    backgroundColor: cor,
+                    color: '#fff',
+                    padding: '12px 20px',
+                    borderRadius: '6px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    fontSize: '14px',
+                    opacity: '0',
+                    transition: 'opacity 0.3s ease, transform 0.3s ease',
+                    transform: 'translateY(10px)'
+                });
+
+                container.appendChild(toast);
+
+                // Animação de entrada
+                requestAnimationFrame(() => {
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translateY(0)';
+                });
+
+                // Animação de saída + remoção do DOM
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(10px)';
+                    setTimeout(() => toast.remove(), 300);
+                }, duracao);
+            }
+        };
+    })();
+</script>

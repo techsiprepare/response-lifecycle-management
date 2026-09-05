@@ -54,6 +54,7 @@
 
         /* Container do Aside (Painel Lateral) */
         .detail-aside {
+          position: relative;
           width: 420px;
           max-width: 90vw;
           height: 100vh;
@@ -102,6 +103,36 @@
         .info-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #8fa0b0; }
         .info-value { font-size: 0.9rem; font-weight: 500; color: #2c3e50; word-break: break-word; }
         .detail-status-section { border-top: 1px dashed #e1e8ed; padding-top: 16px; margin-top: 8px; }
+
+        /* Overlay de bloqueio — exibido quando outro usuário está editando o ticket */
+        .detail-processing-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(255, 255, 255, 0.82);
+          backdrop-filter: blur(4px);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+          z-index: 10;
+          border-radius: inherit;
+          animation: overlayFadeIn 0.25s ease;
+        }
+        @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .detail-processing-icon { font-size: 2rem; animation: spin 1.2s linear infinite; }
+        .detail-processing-text {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #2c3e50;
+          text-align: center;
+          max-width: 260px;
+          line-height: 1.5;
+        }
+        .detail-processing-sub {
+          font-size: 0.78rem;
+          color: #8fa0b0;
+        }
       `;
       document.head.appendChild(style);
     }
@@ -197,6 +228,9 @@
       function render(state) {
         const ticketSelecionado = state?.ticketSelecionado;
         const respostas = state?.respostas || [];
+        const emProcessamento = (state?.ticketsEmProcessamento || []).some(
+          (t) => String(t) === String(ticketSelecionado)
+        );
 
         if (!ticketSelecionado) {
           backdrop.classList.add('hidden');
@@ -214,6 +248,18 @@
         }
 
         backdrop.innerHTML = getDetailHTML(item);
+
+        // Sobrepõe o aside com overlay de bloqueio se o ticket estiver sendo editado
+        if (emProcessamento) {
+          const aside = backdrop.querySelector('.detail-aside');
+          aside.insertAdjacentHTML('afterbegin', `
+            <div class="detail-processing-overlay">
+              <span class="detail-processing-icon">⏳</span>
+              <span class="detail-processing-text">Alguém está alterando esse ticket no momento</span>
+              <span class="detail-processing-sub">O painel será atualizado automaticamente.</span>
+            </div>
+          `);
+        }
 
         requestAnimationFrame(() => {
           backdrop.classList.remove('hidden');

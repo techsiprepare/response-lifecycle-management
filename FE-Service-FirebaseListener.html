@@ -1,0 +1,125 @@
+<!--
+  =============================================================================
+  SERVIÇO: FirebaseListener
+  =============================================================================
+  RESPONSABILIDADE:
+    Conectar ao Firebase Realtime Database via SSE (Server-Sent Events),
+    interpretar o status de cada evento recebido e despachar a action
+    correspondente no AppStore.
+
+    Este módulo NÃO conhece detalhes de UI, fetch de dados ou regras de
+    negócio — apenas roteia eventos para as actions corretas.
+
+  FLUXO:
+    Firebase SSE → _handleEvento() → switch(status)
+      'processando' → AppStore.marcarTicketEmProcessamento(ticket)
+      'sucesso'     → AppStore.concluirProcessamentoTicket(ticket)
+                      + AppStore._fetchEAtualizarTicket(ticket)
+      'erro'        → AppStore.concluirProcessamentoTicket(ticket)
+                      + toast de erro
+
+  MODO DE USO:
+    // Chamado pelo Index.html após AppStore.init() resolver
+    window.FirebaseListener.init(window.AppStore.horaInicioSessao);
+  =============================================================================
+-->
+
+<script>
+    (function () {
+        window.FirebaseListener = {
+            _eventSource: null,
+            _horaInicioSessao: null,
+
+            // -------------------------------------------------------------------------
+            // PONTO DE ENTRADA: inicia a conexão SSE buscando a config no backend
+            // -------------------------------------------------------------------------
+            init(horaInicioSessao) {
+                this._horaInicioSessao = horaInicioSessao;
+                google.script.run
+                    .withSuccessHandler((config) => this._conectar(config))
+                    .withFailureHandler((err) => console.error('[FirebaseListener] Falha ao obter config:', err))
+                    .obterConfiguracaoPublicaFirebase();
+            },
+
+            // -------------------------------------------------------------------------
+            // CONEXÃO: cria o EventSource e registra os handlers
+            // -------------------------------------------------------------------------
+            _conectar(config) {
+                if (!config?.dbUrl) {
+                    console.warn('[FirebaseListener] Config inválida ou dbUrl ausente.');
+                    return;
+                }
+
+                const url = `${config.dbUrl}/ultimo_evento.json`;
+                this._eventSource = new EventSource(url);
+                this._eventSource.addEventListener('put', (e) => this._handleEvento(e));
+                this._eventSource.onerror = (err) =>
+                    console.error('[FirebaseListener] Erro de conexão SSE:', err);
+            },
+
+            // -------------------------------------------------------------------------
+            // HANDLER: parse, validação e roteamento por status
+            // -------------------------------------------------------------------------
+            _handleEvento(e) {
+                try {
+                    const parsed = JSON.parse(e.data);
+                    if (!parsed?.data) return;
+
+                    const { ticket, sessionId, status, timestamp } = parsed.data;
+
+                    // Descarta eventos anteriores ao início desta sessão
+                    if (timestamp && timestamp < this._horaInicioSessao) return;
+
+                    // Processa apenas eventos de OUTRAS sessões
+                    if (!ticket || sessionId === window.AppStore.getState().sessionId) return;
+
+                    switch (status) {
+                        case 'processando':
+                            this._processando(ticket);
+                            break;
+                        case 'sucesso':
+                            this._sucesso(ticket);
+                            break;
+                        case 'erro':
+                            this._erro(ticket);
+                            break;
+                        default:
+                            console.warn(`[FirebaseListener] Status desconhecido: "${status}"`);
+                    }
+                } catch (err) {
+                    console.error('[FirebaseListener] Erro ao processar evento SSE:', err);
+                }
+            },
+
+            // -------------------------------------------------------------------------
+            // HANDLERS DE STATUS
+            // -------------------------------------------------------------------------
+
+            // Outro usuário começou a alterar o ticket
+            _processando(ticket) {
+                window.AppStore.marcarTicketEmProcessamento(ticket);
+
+                window.FEComponenteToast?.exibir({
+                    texto: `O ticket "${ticket}" está sendo alterado...`,
+                    cor: '#0288D1',
+                    duracao: 2000
+                });
+            },
+
+            // Gravação concluída com sucesso — mantém overlay até o dado chegar do backend
+            _sucesso(ticket) {
+                window.AppStore._fetchEAtualizarTicket(ticket);
+            },
+
+            // Gravação encerrada com erro — remove do array e avisa o usuário
+            _erro(ticket) {
+                window.AppStore.concluirProcessamentoTicket(ticket);
+
+                window.FEComponenteToast?.exibir({
+                    texto: `Erro ao processar o ticket "${ticket}".`,
+                    cor: '#C62828'
+                });
+            }
+        };
+    })();
+</script>
