@@ -170,16 +170,14 @@ function testarFirebaseNotifier() {
       return true;
     }
 
-    // 1. Cria um objeto de teste e dispara a notificação via classe oficial
+    // 1. Monta os argumentos conforme a nova assinatura: notificar(resposta, sessionId, status)
     const notifier = new FirebaseNotifier();
-    const dadosEnvio = {
-      ticket: 'TK-TESTE-FIREBASE',
-      status: 'Testando Realtime DB',
-      motivo: `Criado em: ${new Date().toLocaleTimeString('pt-BR')}`
-    };
+    const respostaFake = { ticket: 'TK-TESTE-FIREBASE' };
+    const sessionIdFake = 'SESSION-TESTE-001';
+    const statusFake = 'sucesso';
 
     Logger.log("  └ Enviando evento para o Realtime Database...");
-    notifier.notificar(dadosEnvio);
+    notifier.notificar(respostaFake, sessionIdFake, statusFake);
 
     // 2. Faz o GET de leitura no mesmo nó para confirmar que o nó realmente existe lá
     const urlConsulta = `${dbUrl}/ultimo_evento.json?auth=${secret}`;
@@ -192,13 +190,24 @@ function testarFirebaseNotifier() {
 
     const payloadRecebido = JSON.parse(response.getContentText());
 
-    // 3. Valida se os dados no nó batem com o que foi enviado
-    if (!payloadRecebido || !payloadRecebido.dados || payloadRecebido.dados.ticket !== 'TK-TESTE-FIREBASE') {
-      throw new Error("O nó '/ultimo_evento' não contêm os dados esperados após o envio.");
+    // 3. Valida o payload na nova estrutura plana: { ticket, sessionId, status, timestamp }
+    if (!payloadRecebido || payloadRecebido.ticket !== 'TK-TESTE-FIREBASE') {
+      throw new Error("O nó '/ultimo_evento' não contém os dados esperados após o envio.");
+    }
+    if (payloadRecebido.sessionId !== sessionIdFake) {
+      throw new Error(`Campo 'sessionId' incorreto. Esperado: '${sessionIdFake}', Recebido: '${payloadRecebido.sessionId}'`);
+    }
+    if (payloadRecebido.status !== statusFake) {
+      throw new Error(`Campo 'status' incorreto. Esperado: '${statusFake}', Recebido: '${payloadRecebido.status}'`);
+    }
+    if (typeof payloadRecebido.timestamp !== 'number') {
+      throw new Error("Campo 'timestamp' ausente ou com tipo inválido no payload recebido.");
     }
 
     Logger.log("  └ [OK] Nó '/ultimo_evento' foi gravado e lido no Realtime Database!");
-    Logger.log(`    ↳ Ticket Gravado: ${payloadRecebido.dados.ticket}`);
+    Logger.log(`    ↳ Ticket: ${payloadRecebido.ticket}`);
+    Logger.log(`    ↳ SessionId: ${payloadRecebido.sessionId}`);
+    Logger.log(`    ↳ Status: ${payloadRecebido.status}`);
     Logger.log(`    ↳ Timestamp: ${new Date(payloadRecebido.timestamp).toLocaleString('pt-BR')}`);
 
     return true;
