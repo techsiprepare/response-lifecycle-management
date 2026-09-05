@@ -121,50 +121,5 @@
                 STRATEGIES[strategyKey]?.execute(ticketId);
             }
         };
-
-        // -------------------------------------------------------------------------
-        // 5. BLOCO DE SERVIÇOS DO BOTÃO (Módulo de Regras de Negócio)
-        // -------------------------------------------------------------------------
-        const ButtonServices = {
-            verVideoAluno: (ticketId) => console.log(`[Ação: Ver Vídeo do Aluno] Ticket #${ticketId}`),
-            verQuestaoSite: (ticketId) => console.log(`[Ação: Ver Questão no Site] Ticket #${ticketId}`),
-            abrirGmailBuscarTicket: (ticketId) => console.log(`[Ação: Abrir Gmail] Ticket #${ticketId}`),
-            verAutorizacao: (ticketId) => console.log(`[Ação: Ver Autorização] Ticket #${ticketId}`),
-            enviarBaremaAluno: (ticketId) => console.log(`[Ação: Enviar Barema para Aluno] Ticket #${ticketId}`),
-            solicitarAvaliacaoProfessor: (ticketId) => console.log(`[Ação: Solicitar Avaliação p/ Professor] Ticket #${ticketId}`),
-            aprovarTicket: (ticketId) => console.log(`[Ação: Aprovar Ticket] Ticket #${ticketId}`),
-            devolverAjustes: (ticketId) => console.log(`[Ação: Devolver p/ Ajustes] Ticket #${ticketId}`),
-            rejeitarTicket: (ticketId) => console.log(`[Ação: Rejeitar Ticket] Ticket #${ticketId}`),
-            mudarProntoReanalise: (ticketId) => console.log(`[Ação: Mudar p/ Pronto p/ Reanálise] Ticket #${ticketId}`),
-
-            mudarProntoParaAnalise: function (ticketId) {
-                const estadoAtual = window.AppStore.getState();
-                const respostaOriginal = estadoAtual.respostas.find(r => String(r.ticket) === String(ticketId));
-
-                if (!respostaOriginal) {
-                    console.error(`Resposta com ticket #${ticketId} não encontrada no AppStore.`);
-                    return;
-                }
-
-                const respostaAtualizada = {
-                    ...respostaOriginal,
-                    status: 'Pronto p/ Análise'
-                };
-
-                const novasRespostas = estadoAtual.respostas.map(r =>
-                    String(r.ticket) === String(ticketId) ? respostaAtualizada : r
-                );
-
-                window.AppStore.setState(
-                    { respostas: novasRespostas, loading: true },
-                    true,
-                    respostaAtualizada
-                );
-            },
-
-            mudarEmAnalise: (ticketId) => console.log(`[Ação: Mudar p/ Em análise] Ticket #${ticketId}`),
-            salvarLinkVideo: (ticketId) => console.log(`[Ação: Salvar Link do Vídeo] Ticket #${ticketId}`)
-        };
-
     })();
 </script>
