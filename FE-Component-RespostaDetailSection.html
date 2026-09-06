@@ -103,70 +103,70 @@
         // 4. DICIONÁRIO DE CONFIGURAÇÕES DE BOTÕES REUTILIZÁVEIS
         // -------------------------------------------------------------------------
         const createBtnConfig = {
-            verVideoAluno: (ticketId) => ({
+            verVideoAluno: (item) => ({
                 label: 'Ver Vídeo do Aluno',
                 variant: 'app-btn-light',
-                onClick: () => window.ModalServices.abrirModalVideo(ticketId)
+                onClick: () => window.ModalServices.abrirModalVideo(item)
             }),
-            verQuestaoSite: (ticketId) => ({
+            verQuestaoSite: (item) => ({
                 label: 'Ver Questão no Site',
                 variant: 'app-btn-light',
                 onClick: () => { } // redirecionamento direto a ser implementado
             }),
-            abrirGmailBuscarTicket: (ticketId) => ({
+            abrirGmailBuscarTicket: (item) => ({
                 label: 'Abrir Gmail (Buscar Ticket)',
                 variant: 'app-btn-light',
                 onClick: () => { } // redirecionamento direto a ser implementado
             }),
-            verAutorizacao: (ticketId) => ({
+            verAutorizacao: (item) => ({
                 label: 'Ver Autorização',
                 variant: 'app-btn-light',
-                onClick: () => window.ModalServices.abrirModalVerAutorizacao(ticketId)
+                onClick: () => window.ModalServices.abrirModalVerAutorizacao(item)
             }),
-            enviarBaremaAluno: (ticketId) => ({
+            enviarBaremaAluno: (item) => ({
                 label: 'Enviar Barema para Aluno',
                 variant: 'app-btn-light',
-                onClick: () => window.ModalServices.abrirModalEnvioBarema(ticketId)
+                onClick: () => window.ModalServices.abrirModalEnvioBarema(item)
             }),
-            solicitarAvaliacaoProfessor: (ticketId) => ({
+            solicitarAvaliacaoProfessor: (item) => ({
                 label: 'Solicitar Avaliação p/ Professor',
                 variant: 'app-btn-light',
-                onClick: () => window.ModalServices.abrirModalSolicitarAvaliacao(ticketId)
+                onClick: () => window.ModalServices.abrirModalSolicitarAvaliacao(item)
             }),
-            salvarLinkVideo: (ticketId) => ({
+            salvarLinkVideo: (item) => ({
                 label: 'Salvar Link do Vídeo',
                 variant: 'app-btn-light',
-                onClick: () => window.ModalServices.abrirModalSalvarVideo(ticketId)
+                onClick: () => window.ModalServices.abrirModalSalvarVideo(item)
             }),
-            aprovarTicket: (ticketId) => ({
+            aprovarTicket: (item) => ({
                 label: 'Aprovar Ticket',
                 variant: 'app-btn-success',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Aprovado')
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Aprovado')
             }),
-            devolverAjustes: (ticketId) => ({
+            devolverAjustes: (item) => ({
                 label: 'Devolver p/ Ajustes',
                 variant: 'app-btn-light',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Devolvido para Ajustes')
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Devolvido para Ajustes')
             }),
-            rejeitarTicket: (ticketId) => ({
+            rejeitarTicket: (item) => ({
                 label: 'Rejeitar Ticket',
                 variant: 'app-btn-danger',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Rejeitado')
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Rejeitado')
             }),
-            mudarProntoReanalise: (ticketId) => ({
+            mudarProntoReanalise: (item) => ({
                 label: 'Mudar p/ Pronto p/ Reanálise',
                 variant: 'app-btn-purple',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Pronto p/ Reanálise')
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Pronto p/ Reanálise')
             }),
-            mudarProntoParaAnalise: (ticketId) => ({
+            mudarProntoParaAnalise: (item) => ({
                 label: 'Mudar p/ Pronto p/ Análise',
                 variant: 'app-btn-blue',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Pronto p/ Análise')
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Pronto p/ Análise')
             }),
-            mudarEmAnalise: (ticketId) => ({
+            mudarEmAnalise: (item) => ({
                 label: 'Mudar p/ Em análise',
                 variant: 'app-btn-orange',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Em análise')
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Em análise')
             })
         };
 
@@ -178,11 +178,11 @@
             getButtonConfigurations(item) {
                 return {
                     conteudoButtons: [
-                        createBtnConfig.verVideoAluno(item.ticket),
-                        createBtnConfig.verQuestaoSite(item.ticket)
+                        createBtnConfig.verVideoAluno(item),
+                        createBtnConfig.verQuestaoSite(item)
                     ],
                     fluxoButtons: [
-                        createBtnConfig.mudarProntoParaAnalise(item.ticket)
+                        createBtnConfig.mudarProntoParaAnalise(item)
                     ]
                 };
             }
@@ -192,14 +192,14 @@
             getButtonConfigurations(item) {
                 return {
                     conteudoButtons: [
-                        createBtnConfig.verVideoAluno(item.ticket),
-                        createBtnConfig.verQuestaoSite(item.ticket)
+                        createBtnConfig.verVideoAluno(item),
+                        createBtnConfig.verQuestaoSite(item)
                     ],
                     comunicacaoButtons: [
-                        createBtnConfig.abrirGmailBuscarTicket(item.ticket)
+                        createBtnConfig.abrirGmailBuscarTicket(item)
                     ],
                     fluxoButtons: [
-                        createBtnConfig.mudarEmAnalise(item.ticket)
+                        createBtnConfig.mudarEmAnalise(item)
                     ]
                 };
             }
@@ -209,20 +209,20 @@
             getButtonConfigurations(item) {
                 return {
                     conteudoButtons: [
-                        createBtnConfig.verVideoAluno(item.ticket),
-                        createBtnConfig.verQuestaoSite(item.ticket),
-                        createBtnConfig.verAutorizacao(item.ticket)
+                        createBtnConfig.verVideoAluno(item),
+                        createBtnConfig.verQuestaoSite(item),
+                        createBtnConfig.verAutorizacao(item)
                     ],
                     comunicacaoButtons: [
-                        createBtnConfig.abrirGmailBuscarTicket(item.ticket),
-                        createBtnConfig.enviarBaremaAluno(item.ticket),
-                        createBtnConfig.solicitarAvaliacaoProfessor(item.ticket)
+                        createBtnConfig.abrirGmailBuscarTicket(item),
+                        createBtnConfig.enviarBaremaAluno(item),
+                        createBtnConfig.solicitarAvaliacaoProfessor(item)
                     ],
                     fluxoButtons: [
-                        createBtnConfig.aprovarTicket(item.ticket),
-                        createBtnConfig.devolverAjustes(item.ticket),
-                        createBtnConfig.rejeitarTicket(item.ticket),
-                        createBtnConfig.mudarProntoReanalise(item.ticket)
+                        createBtnConfig.aprovarTicket(item),
+                        createBtnConfig.devolverAjustes(item),
+                        createBtnConfig.rejeitarTicket(item),
+                        createBtnConfig.mudarProntoReanalise(item)
                     ]
                 };
             }
@@ -232,14 +232,14 @@
             getButtonConfigurations(item) {
                 return {
                     conteudoButtons: [
-                        createBtnConfig.verVideoAluno(item.ticket),
-                        createBtnConfig.verQuestaoSite(item.ticket)
+                        createBtnConfig.verVideoAluno(item),
+                        createBtnConfig.verQuestaoSite(item)
                     ],
                     comunicacaoButtons: [
-                        createBtnConfig.abrirGmailBuscarTicket(item.ticket)
+                        createBtnConfig.abrirGmailBuscarTicket(item)
                     ],
                     fluxoButtons: [
-                        createBtnConfig.mudarEmAnalise(item.ticket)
+                        createBtnConfig.mudarEmAnalise(item)
                     ]
                 };
             }
@@ -249,14 +249,14 @@
             getButtonConfigurations(item) {
                 return {
                     conteudoButtons: [
-                        createBtnConfig.verVideoAluno(item.ticket),
-                        createBtnConfig.verQuestaoSite(item.ticket)
+                        createBtnConfig.verVideoAluno(item),
+                        createBtnConfig.verQuestaoSite(item)
                     ],
                     comunicacaoButtons: [
-                        createBtnConfig.abrirGmailBuscarTicket(item.ticket)
+                        createBtnConfig.abrirGmailBuscarTicket(item)
                     ],
                     fluxoButtons: [
-                        createBtnConfig.mudarProntoReanalise(item.ticket)
+                        createBtnConfig.mudarProntoReanalise(item)
                     ]
                 };
             }
@@ -266,15 +266,15 @@
             getButtonConfigurations(item) {
                 return {
                     conteudoButtons: [
-                        createBtnConfig.verVideoAluno(item.ticket),
-                        createBtnConfig.verQuestaoSite(item.ticket),
-                        createBtnConfig.salvarLinkVideo(item.ticket)
+                        createBtnConfig.verVideoAluno(item),
+                        createBtnConfig.verQuestaoSite(item),
+                        createBtnConfig.salvarLinkVideo(item)
                     ],
                     comunicacaoButtons: [
-                        createBtnConfig.abrirGmailBuscarTicket(item.ticket)
+                        createBtnConfig.abrirGmailBuscarTicket(item)
                     ],
                     fluxoButtons: [
-                        createBtnConfig.mudarProntoReanalise(item.ticket)
+                        createBtnConfig.mudarProntoReanalise(item)
                     ]
                 };
             }
@@ -284,14 +284,14 @@
             getButtonConfigurations(item) {
                 return {
                     conteudoButtons: [
-                        createBtnConfig.verVideoAluno(item.ticket),
-                        createBtnConfig.verQuestaoSite(item.ticket)
+                        createBtnConfig.verVideoAluno(item),
+                        createBtnConfig.verQuestaoSite(item)
                     ],
                     comunicacaoButtons: [
-                        createBtnConfig.abrirGmailBuscarTicket(item.ticket)
+                        createBtnConfig.abrirGmailBuscarTicket(item)
                     ],
                     fluxoButtons: [
-                        createBtnConfig.mudarProntoReanalise(item.ticket)
+                        createBtnConfig.mudarProntoReanalise(item)
                     ]
                 };
             }

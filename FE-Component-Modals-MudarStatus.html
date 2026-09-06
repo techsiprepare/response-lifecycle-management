@@ -8,7 +8,7 @@
     (function () {
         window.ModalServices = window.ModalServices || {};
 
-        window.ModalServices.abrirModalMudarStatus = function (ticketId, novoStatus) {
+        window.ModalServices.abrirModalMudarStatus = function (item, novoStatus) {
             if (!window.ModalServices.renderModalBase) {
                 return console.error('FE-Component-Modals.html não carregado.');
             }
@@ -37,12 +37,12 @@
             }
 
             const bodyHtml = `
-        <p>Deseja alterar o Ticket <strong>#${ticketId}</strong> para <strong>"${novoStatus}"</strong>?</p>
+        <p>Deseja alterar o Ticket <strong>#${item.ticket}</strong> para <strong>"${novoStatus}"</strong>?</p>
         ${campoObrigatorioHtml}
       `;
 
             const modal = window.ModalServices.renderModalBase({
-                title: `Alterar Status: ${novoStatus}`,
+                title: `Alterar Status: ${novoStatus} — #${item.ticket}`,
                 bodyHtml,
                 buttons: [
                     { label: 'Cancelar', variant: 'app-btn-light', onClick: () => modal.fechar() },
@@ -69,7 +69,7 @@
                             }
 
                             if (window.AppStore?.atualizarTicket) {
-                                window.AppStore.atualizarTicket(ticketId, novosCampos);
+                                window.AppStore.atualizarTicket(item.ticket, novosCampos);
                             } else {
                                 console.error('AppStore.atualizarTicket não está disponível.');
                             }

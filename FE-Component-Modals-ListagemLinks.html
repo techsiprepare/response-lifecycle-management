@@ -1,0 +1,130 @@
+<!--
+ =============================================================================
+ COMPONENTE/SERVIÇO: Modal de Listagem de Links
+ =============================================================================
+ RESPONSABILIDADE:
+   Expõe dois métodos no namespace ModalServices para exibir listas
+   cronológicas de links relacionados a uma resposta.
+ =============================================================================
+-->
+
+<script>
+    (function () {
+        window.ModalServices = window.ModalServices || {};
+
+        // -------------------------------------------------------------------------
+        // 1. ESTILOS OTIMIZADOS
+        // -------------------------------------------------------------------------
+        if (!document.getElementById('style-modal-listagem-links')) {
+            const style = document.createElement('style');
+            style.id = 'style-modal-listagem-links';
+            style.textContent = `
+                .link-list { display: flex; flex-direction: column; gap: 8px; }
+                
+                .link-item { 
+                    display: flex; flex-direction: column; gap: 6px; 
+                    padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; 
+                    background: #ffffff; text-decoration: none; color: #2d3748; 
+                    transition: all 0.2s ease; cursor: pointer;
+                }
+                
+                a.link-item:hover { 
+                    border-color: #cbd5e1; background: #f8fafc; 
+                    transform: translateY(-1px); 
+                }
+
+                .link-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+                .link-badge { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 12px; white-space: nowrap; }
+                .badge-original { background: #ebf8ff; color: #3182ce; }
+                .badge-reenvio { background: #f0fff4; color: #38a169; }
+                
+                .link-time { font-size: 0.75rem; color: #a0aec0; white-space: nowrap; }
+                .link-list-empty { font-size: 0.85rem; color: #a0aec0; font-style: italic; text-align: center; padding: 12px 0; }
+                
+                .link-desc { 
+                    font-size: 0.8rem; color: #718096; 
+                }
+
+                #app-active-modal .app-modal-card { max-width: 540px; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // -------------------------------------------------------------------------
+        // 2. HELPERS INTERNOS
+        // -------------------------------------------------------------------------
+        function _renderLinkItem({ url, dataHora, badgeLabel, badgeClass, descricao }) {
+            let safeUrl = url;
+
+            if (!/^https?:\/\//i.test(safeUrl)) {
+                safeUrl = 'https://' + safeUrl;
+            }
+
+            return `
+                <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" onclick="window.open('${safeUrl}', '_blank'); return false;" class="link-item">
+                    <div class="link-header">
+                        <span class="link-badge ${badgeClass}">${badgeLabel}</span>
+                        <span class="link-time">${dataHora || '—'}</span>
+                    </div>
+                    ${descricao ? `<div class="link-desc">${descricao}</div>` : ''}
+                </a>
+            `;
+        }
+
+        function _buildLinkListHtml(resposta, campoOriginal, campoReenvio) {
+            const itens = [];
+
+            // Adiciona o original apenas se houver link preenchido
+            if (resposta[campoOriginal]) {
+                itens.push(_renderLinkItem({
+                    url: resposta[campoOriginal],
+                    dataHora: resposta.dataHora,
+                    badgeLabel: 'Original',
+                    badgeClass: 'badge-original'
+                }));
+            }
+
+            // Adiciona os reenvios apenas se houver link preenchido
+            (resposta.reenvios || []).forEach((reenvio, i) => {
+                if (reenvio[campoReenvio]) {
+                    itens.push(_renderLinkItem({
+                        url: reenvio[campoReenvio],
+                        dataHora: reenvio.carimboDataHora,
+                        badgeLabel: `Reenvio ${i + 1}`,
+                        badgeClass: 'badge-reenvio',
+                        descricao: reenvio.descricao
+                    }));
+                }
+            });
+
+            if (itens.length === 0) {
+                return `<div class="link-list-empty">Nenhum link encontrado.</div>`;
+            }
+
+            return `<div class="link-list">${itens.join('')}</div>`;
+        }
+
+        function _abrirModalListagem(resposta, titulo, campoOriginal, campoReenvio) {
+            if (!window.ModalServices.renderModalBase) return console.error('FE-Component-Modals.html ausente.');
+            if (!resposta) return console.error('Parâmetro "resposta" é obrigatório.');
+
+            const modal = window.ModalServices.renderModalBase({
+                title: `${titulo} — Ticket ${resposta.ticket || ''}`,
+                bodyHtml: _buildLinkListHtml(resposta, campoOriginal, campoReenvio),
+                buttons: [
+                    { label: 'Fechar', variant: 'app-btn-light', onClick: () => modal.fechar() }
+                ]
+            });
+        }
+
+        // -------------------------------------------------------------------------
+        // 3. MÉTODOS EXPORTADOS
+        // -------------------------------------------------------------------------
+        window.ModalServices.abrirModalVideo = (resposta) =>
+            _abrirModalListagem(resposta, 'Vídeos', 'urlVideoOriginal', 'urlAtualizada');
+
+        window.ModalServices.abrirModalVerAutorizacao = (resposta) =>
+            _abrirModalListagem(resposta, 'Autorizações', 'autorizacao', 'autorizacaoAtualizada');
+
+    })();
+</script>
