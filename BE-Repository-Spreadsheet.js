@@ -18,6 +18,20 @@ class SpreadsheetRepository {
     }));
   }
 
+  getProvas() {
+    const sheet = this.getSpreadsheet().getSheetByName('Provas_Enade');
+    if (!sheet) return [];
+    const values = sheet.getDataRange().getValues().slice(1);
+    return values.map(row => new Prova({
+      idProva: row[0],
+      ano: row[1],
+      areaProva: row[2],
+      modalidade: row[3],
+      numeroCaderno: row[4],
+      linkProva: row[5]
+    }));
+  }
+
   _mapRowToResposta(row, index) {
     return new Resposta({
       rowIndex: index + 2, ticket: row[0], dataHora: row[1], emailPessoal: row[2],
@@ -48,6 +62,10 @@ class SpreadsheetRepository {
     });
   }
 
+  static get COLUNAS_IGNORADAS() {
+    return ['URL Atualizada', 'Autorização Atualizada', 'Pré-Curadoria', 'Ver_Questão_Site'];
+  }
+
   salvarResposta(resposta) {
     const lock = LockService.getScriptLock();
     try {
@@ -56,7 +74,7 @@ class SpreadsheetRepository {
       if (!resposta.rowIndex) throw new Error("rowIndex obrigatório para salvar.");
       const respObj = new Resposta(resposta);
       const sheet = this.getSpreadsheet().getSheetByName('Gerenciamento_Respostas');
-      const colunasIgnoradas = ['Pré-Curadoria', 'Ver_Questão_Site'];
+      const colunasIgnoradas = SpreadsheetRepository.COLUNAS_IGNORADAS;
       const headers = sheet.getRange(1, 1, 1, 21).getValues()[0];
       const valores = respObj.toArray();
 

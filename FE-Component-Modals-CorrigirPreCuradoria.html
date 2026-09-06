@@ -1,0 +1,215 @@
+<script>
+    (function () {
+        window.ModalServices = window.ModalServices || {};
+
+        // -------------------------------------------------------------------------
+        // 1. ESTILOS OTIMIZADOS
+        // -------------------------------------------------------------------------
+        if (!document.getElementById('style-modal-corrigir-precuradoria')) {
+            const style = document.createElement('style');
+            style.id = 'style-modal-corrigir-precuradoria';
+            style.textContent = `
+                .prova-modal-search {
+                    margin-bottom: 12px;
+                }
+                .prova-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    max-height: 350px;
+                    overflow-y: auto;
+                    padding-right: 4px;
+                    
+                    /* Oculta barra de scroll mantendo a funcionalidade de rolagem */
+                    scrollbar-width: none; /* Firefox */
+                    -ms-overflow-style: none; /* IE e Edge */
+                }
+                .prova-list::-webkit-scrollbar {
+                    display: none; /* Chrome, Safari e Opera */
+                }
+                .prova-item {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                    padding: 12px;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    background: #ffffff;
+                    text-decoration: none;
+                    color: #2d3748;
+                    transition: border-color 0.2s ease, background-color 0.2s ease;
+                    cursor: pointer;
+                }
+                .prova-item:hover {
+                    border-color: #3b82f6;
+                    background: #f8fafc;
+                }
+                .prova-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 8px;
+                }
+                .prova-badge {
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    padding: 3px 8px;
+                    border-radius: 12px;
+                    white-space: nowrap;
+                    background: #ebf8ff;
+                    color: #2b6cb0;
+                    max-width: 180px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    display: inline-block;
+                }
+                .prova-ano {
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: #718096;
+                }
+                .prova-area {
+                    font-size: 0.88rem;
+                    font-weight: 600;
+                    color: #2d3748;
+                }
+                .prova-details {
+                    font-size: 0.78rem;
+                    color: #718096;
+                    display: flex;
+                    gap: 12px;
+                }
+                .prova-link-btn {
+                    font-size: 0.75rem;
+                    color: #3182ce;
+                    text-decoration: none;
+                    margin-top: 2px;
+                    width: fit-content;
+                }
+                .prova-link-btn:hover {
+                    text-decoration: underline;
+                }
+                .prova-list-empty {
+                    font-size: 0.85rem;
+                    color: #a0aec0;
+                    font-style: italic;
+                    text-align: center;
+                    padding: 16px 0;
+                }
+                #app-active-modal .app-modal-card { max-width: 500px; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // -------------------------------------------------------------------------
+        // 2. MÉTODO DE ABERTURA DO MODAL
+        // -------------------------------------------------------------------------
+        window.ModalServices.abrirModalCorrigirPreCuradoria = function (resposta) {
+            if (!window.ModalServices.renderModalBase) {
+                return console.error('FE-Component-Modals.html ausente.');
+            }
+            if (!resposta) {
+                return console.error('Parâmetro "resposta" é obrigatório.');
+            }
+
+            const bodyHtml = `
+                <div class="app-modal-field-group prova-modal-search">
+                    <input type="text" id="prova-search-input" class="app-modal-input" placeholder="Buscar prova por ID, Área, Ano..." />
+                </div>
+                <div id="prova-list-container" class="prova-list">
+                    <div class="prova-list-empty">Carregando provas...</div>
+                </div>
+            `;
+
+            let modalRef = null;
+            let listaProvasCache = [];
+
+            function renderListaProvas(provas, filtro = '') {
+                const container = document.getElementById('prova-list-container');
+                if (!container) return;
+
+                const termo = filtro.trim().toLowerCase();
+                const provasFiltradas = provas.filter(p => {
+                    if (!termo) return true;
+                    return (
+                        String(p.idProva || '').toLowerCase().includes(termo) ||
+                        String(p.areaProva || '').toLowerCase().includes(termo) ||
+                        String(p.ano || '').toLowerCase().includes(termo) ||
+                        String(p.modalidade || '').toLowerCase().includes(termo) ||
+                        String(p.numeroCaderno || '').toLowerCase().includes(termo)
+                    );
+                });
+
+                if (provasFiltradas.length === 0) {
+                    container.innerHTML = `<div class="prova-list-empty">Nenhuma prova encontrada.</div>`;
+                    return;
+                }
+
+                container.innerHTML = provasFiltradas.map(prova => `
+                    <div class="prova-item" data-id="${prova.idProva}">
+                        <div class="prova-header">
+                            <span class="prova-badge" title="ID: ${prova.idProva}">ID: ${prova.idProva}</span>
+                            <span class="prova-ano">Ano: ${prova.ano || '-'}</span>
+                        </div>
+                        <div class="prova-area">${prova.areaProva || 'Área não informada'}</div>
+                        <div class="prova-details">
+                            <span>Modalidade: ${prova.modalidade || '-'}</span>
+                            <span>Caderno: ${prova.numeroCaderno || '-'}</span>
+                        </div>
+                        ${prova.linkProva ? `<a href="${prova.linkProva}" target="_blank" rel="noopener noreferrer" class="prova-link-btn" onclick="event.stopPropagation();">Ver Prova ↗</a>` : ''}
+                    </div>
+                `).join('');
+
+                // Event listener para seleção da prova
+                container.querySelectorAll('.prova-item').forEach(el => {
+                    el.onclick = () => {
+                        const idSelecionado = el.getAttribute('data-id');
+                        if (window.AppStore?.atualizarTicket) {
+                            window.AppStore.atualizarTicket(resposta.ticket, {
+                                idProva: idSelecionado,
+                                preCuradoria: '✅ Válido (Prova e Questão existem)'
+                            });
+                        }
+                        modalRef.fechar();
+                    };
+                });
+            }
+
+            modalRef = window.ModalServices.renderModalBase({
+                title: `Corrigir Pré-Curadoria - Ticket #${resposta.ticket}`,
+                bodyHtml,
+                buttons: [
+                    { label: 'Cancelar', variant: 'app-btn-light', onClick: () => modalRef.fechar() }
+                ]
+            });
+
+            // Input listener para filtro dinâmico
+            const searchInput = document.getElementById('prova-search-input');
+            if (searchInput) {
+                searchInput.oninput = (e) => {
+                    renderListaProvas(listaProvasCache, e.target.value);
+                };
+            }
+
+            // Busca as provas via Google Apps Script backend
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler((provas) => {
+                        listaProvasCache = Array.isArray(provas) ? provas : [];
+                        renderListaProvas(listaProvasCache, searchInput?.value || '');
+                    })
+                    .withFailureHandler((err) => {
+                        console.error('Erro ao buscar provas:', err);
+                        const container = document.getElementById('prova-list-container');
+                        if (container) {
+                            container.innerHTML = `<div class="prova-list-empty" style="color:#ef4444;">Erro ao carregar provas.</div>`;
+                        }
+                    })
+                    .obterProvas();
+            } else {
+                console.warn('google.script.run não disponível.');
+            }
+        };
+    })();
+</script>

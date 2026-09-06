@@ -43,3 +43,9 @@ function obterRespostaPorTicket(ticket) {
   const resposta = repo.getRespostaPorTicket(ticket);
   return resposta;
 }
+
+function obterProvas() {
+  const repo = new SpreadsheetRepository();
+  const provas = repo.getProvas();
+  return JSON.parse(JSON.stringify(provas));
+}

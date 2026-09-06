@@ -15,6 +15,8 @@ function executarTodasAsValidacoes() {
   passouEmTodos = testarSpreadsheetRepositoryEscritaSegura() && passouEmTodos;
   passouEmTodos = testarFirebaseNotifier() && passouEmTodos;
   passouEmTodos = testarControllerEErros() && passouEmTodos;
+  passouEmTodos = testarClasseProvaELeitura() && passouEmTodos;
+  passouEmTodos = testarColunasIgnoradasEArrayFormula() && passouEmTodos;
 
   Logger.log("\n==================================================");
   if (passouEmTodos) {
@@ -242,6 +244,112 @@ function testarControllerEErros() {
     }
 
     Logger.log("  └ [OK] Validação de 'rowIndex' obrigatório e entrypoints do Controller validados.");
+    return true;
+  } catch (err) {
+    Logger.log(`  └ [FALHA] ${err.message}`);
+    return false;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 7. TESTE UNITÁRIO E INTEGRAÇÃO: Classe Prova & Repository getProvas
+// -----------------------------------------------------------------------------
+function testarClasseProvaELeitura() {
+  Logger.log("\n[TESTE 7] Classe Prova e getProvas()...");
+  try {
+    const prova = new Prova({
+      idProva: 'PRV-001',
+      ano: 2023,
+      areaProva: 'Engenharia',
+      modalidade: 'Presencial',
+      numeroCaderno: 1,
+      linkProva: 'http://prova.com'
+    });
+
+    if (prova.idProva !== 'PRV-001' || prova.areaProva !== 'Engenharia') {
+      throw new Error("Mapeamento de atributos na classe Prova falhou.");
+    }
+
+    const repo = new SpreadsheetRepository();
+    const provas = repo.getProvas();
+    if (!Array.isArray(provas)) {
+      throw new Error("O retorno de getProvas() deve ser um Array.");
+    }
+
+    Logger.log(`  └ [OK] Instanciação da Classe Prova e leitura de Provas_Enade validadas (${provas.length} provas).`);
+    return true;
+  } catch (err) {
+    Logger.log(`  └ [FALHA] ${err.message}`);
+    return false;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 8. TESTE DE INTEGRAÇÃO: Validação de ArrayFormula e Fórmulas vs colunasIgnoradas
+// -----------------------------------------------------------------------------
+function testarColunasIgnoradasEArrayFormula() {
+  Logger.log("\n[TESTE 8] Validação de Colunas Ignoradas (ArrayFormula/Fórmulas vs colunasIgnoradas em salvarResposta)...");
+  try {
+    const repo = new SpreadsheetRepository();
+    const sheet = repo.getSpreadsheet().getSheetByName('Gerenciamento_Respostas');
+    if (!sheet) {
+      throw new Error("Aba 'Gerenciamento_Respostas' não encontrada na planilha.");
+    }
+
+    const lastCol = sheet.getLastColumn();
+    if (lastCol === 0) {
+      throw new Error("A aba 'Gerenciamento_Respostas' está vazia.");
+    }
+
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    const formulasLinha1 = sheet.getRange(1, 1, 1, lastCol).getFormulas()[0];
+    const maxLinhasParaVerificar = Math.min(sheet.getLastRow(), 5);
+    const formulasLinha2 = maxLinhasParaVerificar >= 2
+      ? sheet.getRange(2, 1, 1, lastCol).getFormulas()[0]
+      : [];
+
+    // Obtém dinamicamente a lista de colunas ignoradas da classe SpreadsheetRepository
+    const colunasIgnoradas = SpreadsheetRepository.COLUNAS_IGNORADAS;
+    const colunasComFormulaNaoIgnoradas = [];
+    const colunasComFormulaIgnoradas = [];
+
+    headers.forEach((headerRaw, index) => {
+      const header = String(headerRaw || '').trim();
+      const colNum = index + 1;
+      const f1 = formulasLinha1[index] || '';
+      const f2 = formulasLinha2[index] || '';
+
+      const temFormula = f1.startsWith('=') || f2.startsWith('=') ||
+        f1.toUpperCase().includes('ARRAYFORMULA') ||
+        f2.toUpperCase().includes('ARRAYFORMULA');
+
+      if (temFormula) {
+        const estaIgnorada = colunasIgnoradas.includes(header);
+        const formulaTexto = f1 || f2;
+        const info = `Coluna ${colNum} ("${header}") [Fórmula: ${formulaTexto}]`;
+
+        if (estaIgnorada) {
+          colunasComFormulaIgnoradas.push(info);
+        } else {
+          colunasComFormulaNaoIgnoradas.push(info);
+        }
+      }
+    });
+
+    if (colunasComFormulaIgnoradas.length > 0) {
+      Logger.log("  └ Colunas com fórmula devidamente ignoradas:");
+      colunasComFormulaIgnoradas.forEach(c => Logger.log(`     ✓ ${c}`));
+    }
+
+    if (colunasComFormulaNaoIgnoradas.length > 0) {
+      throw new Error(
+        `Existem colunas com ArrayFormula/Fórmula que NÃO estão na constante 'colunasIgnoradas':\n` +
+        colunasComFormulaNaoIgnoradas.map(c => `     ❌ ${c}`).join('\n') +
+        `\n  💡 Solução: Adicione esses cabeçalhos em 'colunasIgnoradas' na função salvarResposta().`
+      );
+    }
+
+    Logger.log("  └ [OK] Nenhuma coluna com ArrayFormula ou fórmula desprotegida foi encontrada.");
     return true;
   } catch (err) {
     Logger.log(`  └ [FALHA] ${err.message}`);

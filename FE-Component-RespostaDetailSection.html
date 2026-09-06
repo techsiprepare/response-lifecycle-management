@@ -167,6 +167,11 @@
                 label: 'Mudar p/ Em análise',
                 variant: 'app-btn-orange',
                 onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Em análise', 'app-btn-orange')
+            }),
+            corrigirPreCuradoria: (item) => ({
+                label: 'Corrigir Pré-Curadoria',
+                variant: 'app-btn-orange',
+                onClick: () => window.ModalServices.abrirModalCorrigirPreCuradoria(item)
             })
         };
 
@@ -176,13 +181,18 @@
 
         class NovoStatusStrategy extends StatusSectionStrategy {
             getButtonConfigurations(item) {
+                const preCuradoriaOk = String(item.preCuradoria || '').includes('✅ Válido');
+                const fluxoBtn = preCuradoriaOk
+                    ? createBtnConfig.mudarProntoParaAnalise(item)
+                    : createBtnConfig.corrigirPreCuradoria(item);
+
                 return {
                     conteudoButtons: [
                         createBtnConfig.verVideoAluno(item),
                         createBtnConfig.verQuestaoSite(item)
                     ],
                     fluxoButtons: [
-                        createBtnConfig.mudarProntoParaAnalise(item)
+                        fluxoBtn
                     ]
                 };
             }
