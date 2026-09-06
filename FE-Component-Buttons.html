@@ -1,14 +1,5 @@
-<!--
- =============================================================================
- COMPONENTE: Buttons (Com Padrão Strategy Otimizado)
- =============================================================================
--->
-
 <script>
     (function () {
-        // -------------------------------------------------------------------------
-        // 1. ESTILOS (CSS Base + Modificadores Reutilizáveis)
-        // -------------------------------------------------------------------------
         const styleId = 'style-app-button';
         if (!document.getElementById(styleId)) {
             const style = document.createElement('style');
@@ -30,95 +21,40 @@
           width: 100%;
         }
         .app-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        /* Modificadores de Estilo (Variantes) */
         .app-btn-light { background-color: #edf2f7; color: #4e4e4e; }
         .app-btn-light:hover:not(:disabled) { background-color: #e2e8f0; }
-
         .app-btn-success { background-color: #38a169; color: #ffffff; }
         .app-btn-success:hover:not(:disabled) { background-color: #2f855a; }
-
         .app-btn-danger { background-color: #e53e3e; color: #ffffff; }
         .app-btn-danger:hover:not(:disabled) { background-color: #c53030; }
-
         .app-btn-purple { background-color: #6b46c1; color: #e9d8fd; }
         .app-btn-purple:hover:not(:disabled) { background-color: #553c9a; }
-
         .app-btn-blue { background-color: #3182ce; color: #ffffff; }
         .app-btn-blue:hover:not(:disabled) { background-color: #1d61a0; }
-
         .app-btn-orange { background-color: #dd6b20; color: #ffffff; }
         .app-btn-orange:hover:not(:disabled) { background-color: #c05621; }
       `;
             document.head.appendChild(style);
         }
 
-        // -------------------------------------------------------------------------
-        // 2. CONTRATO & CLASSE CONCRETA DE ESTRATÉGIA
-        // -------------------------------------------------------------------------
-        class ButtonStrategy {
-            constructor(label, variantClass, action) {
-                this.label = label;
-                this.className = variantClass;
-                this.action = action;
-            }
+        window.AppButton = {
+            render({ label, variant = 'app-btn-light', onClickHandler }) {
+                const handlerId = 'btn_click_' + Math.random().toString(36).substr(2, 9);
 
-            execute(ticketId) {
-                if (typeof this.action === 'function') {
-                    this.action(ticketId);
-                }
-            }
-        }
-
-        // -------------------------------------------------------------------------
-        // 3. REGISTRO DECLARATIVO DE ESTRATÉGIAS
-        // -------------------------------------------------------------------------
-        const strategyDefinitions = {
-            'ver_video_aluno': ['Ver Vídeo do Aluno', 'app-btn-light', (id) => ButtonServices.verVideoAluno(id)],
-            'ver_questao_site': ['Ver Questão no Site', 'app-btn-light', (id) => ButtonServices.verQuestaoSite(id)],
-            'abrir_gmail_buscar_ticket': ['Abrir Gmail (Buscar Ticket)', 'app-btn-light', (id) => ButtonServices.abrirGmailBuscarTicket(id)],
-            'ver_autorizacao': ['Ver Autorização', 'app-btn-light', (id) => ButtonServices.verAutorizacao(id)],
-            'enviar_barema_aluno': ['Enviar Barema para Aluno', 'app-btn-light', (id) => ButtonServices.enviarBaremaAluno(id)],
-            'solicitar_avaliacao_professor': ['Solicitar Avaliação p/ Professor', 'app-btn-light', (id) => ButtonServices.solicitarAvaliacaoProfessor(id)],
-            'aprovar_ticket': ['Aprovar Ticket', 'app-btn-success', (id) => ButtonServices.aprovarTicket(id)],
-            'devolver_ajustes': ['Devolver p/ Ajustes', 'app-btn-light', (id) => ButtonServices.devolverAjustes(id)],
-            'rejeitar_ticket': ['Rejeitar Ticket', 'app-btn-danger', (id) => ButtonServices.rejeitarTicket(id)],
-            'mudar_pronto_reanalise': ['Mudar p/ Pronto p/ Reanálise', 'app-btn-purple', (id) => ButtonServices.mudarProntoReanalise(id)],
-            'mudar_pronto_para_analise': ['Mudar p/ Pronto p/ Análise', 'app-btn-blue', (id) => ButtonServices.mudarProntoParaAnalise(id)],
-            'mudar_em_analise': ['Mudar p/ Em análise', 'app-btn-orange', (id) => ButtonServices.mudarEmAnalise(id)],
-            'salvar_link_video': ['Salvar Link do Vídeo', 'app-btn-light', (id) => ButtonServices.salvarLinkVideo(id)]
-        };
-
-        const STRATEGIES = Object.freeze(
-            Object.entries(strategyDefinitions).reduce((acc, [key, [label, variant, action]]) => {
-                acc[key] = new ButtonStrategy(label, variant, action);
-                return acc;
-            }, {})
-        );
-
-        // -------------------------------------------------------------------------
-        // 4. CONTEXTO / FAÇADE PÚBLICA (Buttons)
-        // -------------------------------------------------------------------------
-        window.Buttons = {
-            render(strategyKey, ticketId) {
-                const strategy = STRATEGIES[strategyKey];
-                if (!strategy) {
-                    console.error(`Estratégia "${strategyKey}" não encontrada.`);
-                    return '';
-                }
+                window[handlerId] = function (event) {
+                    if (typeof onClickHandler === 'function') {
+                        onClickHandler(event);
+                    }
+                };
 
                 return `
-          <button 
-            type="button"
-            class="app-btn ${strategy.className}"
-            onclick="window.Buttons.executar('${strategyKey}', '${ticketId}')">
-            ${strategy.label}
-          </button>
-        `;
-            },
-
-            executar(strategyKey, ticketId) {
-                STRATEGIES[strategyKey]?.execute(ticketId);
+                    <button 
+                        type="button"
+                        class="app-btn ${variant}"
+                        onclick="window['${handlerId}'](event)">
+                        ${label}
+                    </button>
+                `;
             }
         };
     })();

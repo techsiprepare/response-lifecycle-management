@@ -1,21 +1,18 @@
 <!--
  =============================================================================
- COMPONENTE: RespostaDetailSection (Estratégias por Status)
+ COMPONENTE: RespostaDetailSection (Estratégias por Status com Modais e AppButton)
  =============================================================================
  RESPONSABILIDADE:
- Renderiza dinamicamente o conteúdo específico e o grupo de botões de ação
- de acordo com o status atual do ticket.
-
- PADRÃO STRATEGY:
- Cada status mapeia para uma classe de estratégia concreta que sabe renderizar
- suas informações e ações específicas, utilizando um template base.
+ Mapeia os status dos tickets para configurações de botões (rotulo, cor e ação).
+ Transfere a renderização visual para o componente burro `AppButton` e
+ delega regras de negócio interativas para modais ou serviços específicos.
  =============================================================================
 -->
 
 <script>
     (function () {
         // -------------------------------------------------------------------------
-        // 1. ESTILOS ISOLADOS (Substituição total de CSS Inline por Classes)
+        // 1. ESTILOS ISOLADOS
         // -------------------------------------------------------------------------
         const styleId = 'style-resposta-detail-section';
         if (!document.getElementById(styleId)) {
@@ -28,20 +25,6 @@
           gap: 16px;
         }
 
-        .status-section-title {
-          font-size: 0.8rem;
-          font-weight: 700;
-          text-transform: uppercase;
-          color: #4a5568;
-          margin: 0;
-        }
-
-        .status-description {
-          font-size: 0.85rem;
-          color: #718096;
-          margin: 0;
-        }
-
         .status-actions-group {
           display: flex;
           gap: 8px;
@@ -49,60 +32,31 @@
           margin-top: 8px;
         }
 
-        .status-field-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .status-field-label {
+        .status-actions-group .info-label {
           font-size: 0.72rem;
           font-weight: 700;
           color: #8fa0b0;
           text-transform: uppercase;
-        }
-
-        .status-field-value {
-          font-size: 0.875rem;
-          color: #2d3748;
-          font-weight: 500;
-        }
-
-        .status-field-value-highlight {
-          color: #c05621;
-          font-weight: 600;
-        }
-
-        .status-textarea {
           width: 100%;
-          min-height: 80px;
-          border: 1px solid #cbd5e0;
-          border-radius: 8px;
-          padding: 10px 12px;
-          font-family: inherit;
-          font-size: 0.875rem;
-          color: #2d3748;
-          box-sizing: border-box;
-          resize: vertical;
-          outline: none;
-          transition: border-color 0.2s ease;
-        }
-
-        .status-textarea:focus {
-          border-color: #3182ce;
-          box-shadow: 0 0 0 1px #3182ce;
+          margin-bottom: 4px;
         }
       `;
             document.head.appendChild(style);
         }
 
         // -------------------------------------------------------------------------
-        // 2. FUNÇÃO GERADORA DE TEMPLATE (Helper)
+        // 2. HELPER DE RENDERIZAÇÃO DE GRUPOS DE BOTÕES
         // -------------------------------------------------------------------------
-        function renderSectionGroup(label, buttonsKeys, ticket) {
-            if (!buttonsKeys || buttonsKeys.length === 0) return '';
+        function renderButtonGroup(label, buttonConfigs) {
+            if (!buttonConfigs || buttonConfigs.length === 0) return '';
 
-            const buttonsHtml = buttonsKeys.map(key => window.Buttons.render(key, ticket)).join('');
+            const buttonsHtml = buttonConfigs
+                .map(config => window.AppButton.render({
+                    label: config.label,
+                    variant: config.variant,
+                    onClickHandler: config.onClick
+                }))
+                .join('');
 
             return `
                 <div class="status-actions-group">
@@ -112,113 +66,245 @@
             `;
         }
 
-        function renderBaseTemplate(item, config) {
-            const conteudoHtml = renderSectionGroup('Conteúdo e Revisão', config.conteudoButtons, item.ticket);
-            const comunicacaoHtml = renderSectionGroup('Comunicação', config.comunicacaoButtons, item.ticket);
-            const fluxoHtml = renderSectionGroup('Fluxo de Trabalho', config.fluxoButtons, item.ticket);
-
-            return `
-                <div class="status-section-container">
-                    ${conteudoHtml}
-                    ${comunicacaoHtml}
-                    ${fluxoHtml}
-                </div>
-            `;
-        }
-
         // -------------------------------------------------------------------------
         // 3. CONTRATO BASE DA ESTRATÉGIA DE SEÇÃO
         // -------------------------------------------------------------------------
         class StatusSectionStrategy {
+            /**
+             * Retorna as configurações de botões divididas por grupos/abas.
+             * @param {Object} item - Objeto do ticket/resposta atual.
+             * @returns {Object} { conteudoButtons, comunicacaoButtons, fluxoButtons }
+             */
+            getButtonConfigurations(item) {
+                return {
+                    conteudoButtons: [],
+                    comunicacaoButtons: [],
+                    fluxoButtons: []
+                };
+            }
+
             render(item) {
-                throw new Error("O método render() deve ser implementado pela estratégia concreta.");
+                const config = this.getButtonConfigurations(item);
+                const conteudoHtml = renderButtonGroup('Conteúdo e Revisão', config.conteudoButtons);
+                const comunicacaoHtml = renderButtonGroup('Comunicação', config.comunicacaoButtons);
+                const fluxoHtml = renderButtonGroup('Fluxo de Trabalho', config.fluxoButtons);
+
+                return `
+                    <div class="status-section-container">
+                        ${conteudoHtml}
+                        ${comunicacaoHtml}
+                        ${fluxoHtml}
+                    </div>
+                `;
             }
         }
 
         // -------------------------------------------------------------------------
-        // 4. ESTRATÉGIAS CONCRETAS POR STATUS (Uma para cada Status)
+        // 4. DICIONÁRIO DE CONFIGURAÇÕES DE BOTÕES REUTILIZÁVEIS
+        // -------------------------------------------------------------------------
+        const createBtnConfig = {
+            verVideoAluno: (ticketId) => ({
+                label: 'Ver Vídeo do Aluno',
+                variant: 'app-btn-light',
+                onClick: () => window.ModalServices.abrirModalVideo(ticketId)
+            }),
+            verQuestaoSite: (ticketId) => ({
+                label: 'Ver Questão no Site',
+                variant: 'app-btn-light',
+                onClick: () => { } // redirecionamento direto a ser implementado
+            }),
+            abrirGmailBuscarTicket: (ticketId) => ({
+                label: 'Abrir Gmail (Buscar Ticket)',
+                variant: 'app-btn-light',
+                onClick: () => { } // redirecionamento direto a ser implementado
+            }),
+            verAutorizacao: (ticketId) => ({
+                label: 'Ver Autorização',
+                variant: 'app-btn-light',
+                onClick: () => window.ModalServices.abrirModalVerAutorizacao(ticketId)
+            }),
+            enviarBaremaAluno: (ticketId) => ({
+                label: 'Enviar Barema para Aluno',
+                variant: 'app-btn-light',
+                onClick: () => window.ModalServices.abrirModalEnvioBarema(ticketId)
+            }),
+            solicitarAvaliacaoProfessor: (ticketId) => ({
+                label: 'Solicitar Avaliação p/ Professor',
+                variant: 'app-btn-light',
+                onClick: () => window.ModalServices.abrirModalSolicitarAvaliacao(ticketId)
+            }),
+            salvarLinkVideo: (ticketId) => ({
+                label: 'Salvar Link do Vídeo',
+                variant: 'app-btn-light',
+                onClick: () => window.ModalServices.abrirModalSalvarVideo(ticketId)
+            }),
+            aprovarTicket: (ticketId) => ({
+                label: 'Aprovar Ticket',
+                variant: 'app-btn-success',
+                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Aprovado')
+            }),
+            devolverAjustes: (ticketId) => ({
+                label: 'Devolver p/ Ajustes',
+                variant: 'app-btn-light',
+                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Devolvido para Ajustes')
+            }),
+            rejeitarTicket: (ticketId) => ({
+                label: 'Rejeitar Ticket',
+                variant: 'app-btn-danger',
+                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Rejeitado')
+            }),
+            mudarProntoReanalise: (ticketId) => ({
+                label: 'Mudar p/ Pronto p/ Reanálise',
+                variant: 'app-btn-purple',
+                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Pronto p/ Reanálise')
+            }),
+            mudarProntoParaAnalise: (ticketId) => ({
+                label: 'Mudar p/ Pronto p/ Análise',
+                variant: 'app-btn-blue',
+                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Pronto p/ Análise')
+            }),
+            mudarEmAnalise: (ticketId) => ({
+                label: 'Mudar p/ Em análise',
+                variant: 'app-btn-orange',
+                onClick: () => window.ModalServices.abrirModalMudarStatus(ticketId, 'Em análise')
+            })
+        };
+
+        // -------------------------------------------------------------------------
+        // 5. ESTRATÉGIAS CONCRETAS POR STATUS
         // -------------------------------------------------------------------------
 
         class NovoStatusStrategy extends StatusSectionStrategy {
-            render(item) {
-                return renderBaseTemplate(item, {
-                    conteudoButtons: ['ver_video_aluno', 'ver_questao_site'],
-                    fluxoButtons: ['mudar_pronto_para_analise']
-                });
+            getButtonConfigurations(item) {
+                return {
+                    conteudoButtons: [
+                        createBtnConfig.verVideoAluno(item.ticket),
+                        createBtnConfig.verQuestaoSite(item.ticket)
+                    ],
+                    fluxoButtons: [
+                        createBtnConfig.mudarProntoParaAnalise(item.ticket)
+                    ]
+                };
             }
         }
 
         class ProntoParaAnaliseStatusStrategy extends StatusSectionStrategy {
-            render(item) {
-                return renderBaseTemplate(item, {
-                    conteudoButtons: ['ver_video_aluno', 'ver_questao_site'],
-                    comunicacaoButtons: ['abrir_gmail_buscar_ticket'],
-                    fluxoButtons: ['mudar_em_analise']
-                });
+            getButtonConfigurations(item) {
+                return {
+                    conteudoButtons: [
+                        createBtnConfig.verVideoAluno(item.ticket),
+                        createBtnConfig.verQuestaoSite(item.ticket)
+                    ],
+                    comunicacaoButtons: [
+                        createBtnConfig.abrirGmailBuscarTicket(item.ticket)
+                    ],
+                    fluxoButtons: [
+                        createBtnConfig.mudarEmAnalise(item.ticket)
+                    ]
+                };
             }
         }
 
         class EmAnaliseStatusStrategy extends StatusSectionStrategy {
-            render(item) {
-                return renderBaseTemplate(item, {
-                    conteudoButtons: ['ver_video_aluno', 'ver_questao_site', 'ver_autorizacao'],
-                    comunicacaoButtons: ['abrir_gmail_buscar_ticket', 'enviar_barema_aluno', 'solicitar_avaliacao_professor'],
-                    fluxoButtons: ['aprovar_ticket', 'devolver_ajustes', 'rejeitar_ticket', 'mudar_pronto_reanalise']
-                });
+            getButtonConfigurations(item) {
+                return {
+                    conteudoButtons: [
+                        createBtnConfig.verVideoAluno(item.ticket),
+                        createBtnConfig.verQuestaoSite(item.ticket),
+                        createBtnConfig.verAutorizacao(item.ticket)
+                    ],
+                    comunicacaoButtons: [
+                        createBtnConfig.abrirGmailBuscarTicket(item.ticket),
+                        createBtnConfig.enviarBaremaAluno(item.ticket),
+                        createBtnConfig.solicitarAvaliacaoProfessor(item.ticket)
+                    ],
+                    fluxoButtons: [
+                        createBtnConfig.aprovarTicket(item.ticket),
+                        createBtnConfig.devolverAjustes(item.ticket),
+                        createBtnConfig.rejeitarTicket(item.ticket),
+                        createBtnConfig.mudarProntoReanalise(item.ticket)
+                    ]
+                };
             }
         }
 
         class ProntoParaReanaliseStatusStrategy extends StatusSectionStrategy {
-            render(item) {
-                return renderBaseTemplate(item, {
-                    conteudoButtons: ['ver_video_aluno', 'ver_questao_site'],
-                    comunicacaoButtons: ['abrir_gmail_buscar_ticket'],
-                    fluxoButtons: ['mudar_em_analise']
-                });
+            getButtonConfigurations(item) {
+                return {
+                    conteudoButtons: [
+                        createBtnConfig.verVideoAluno(item.ticket),
+                        createBtnConfig.verQuestaoSite(item.ticket)
+                    ],
+                    comunicacaoButtons: [
+                        createBtnConfig.abrirGmailBuscarTicket(item.ticket)
+                    ],
+                    fluxoButtons: [
+                        createBtnConfig.mudarEmAnalise(item.ticket)
+                    ]
+                };
             }
         }
 
         class DevolvidoStatusStrategy extends StatusSectionStrategy {
-            render(item) {
-                return renderBaseTemplate(item, {
-                    conteudoButtons: ['ver_video_aluno', 'ver_questao_site'],
-                    comunicacaoButtons: ['abrir_gmail_buscar_ticket'],
-                    fluxoButtons: ['mudar_pronto_reanalise']
-                });
+            getButtonConfigurations(item) {
+                return {
+                    conteudoButtons: [
+                        createBtnConfig.verVideoAluno(item.ticket),
+                        createBtnConfig.verQuestaoSite(item.ticket)
+                    ],
+                    comunicacaoButtons: [
+                        createBtnConfig.abrirGmailBuscarTicket(item.ticket)
+                    ],
+                    fluxoButtons: [
+                        createBtnConfig.mudarProntoReanalise(item.ticket)
+                    ]
+                };
             }
         }
 
         class AprovadoStatusStrategy extends StatusSectionStrategy {
-            render(item) {
-                return renderBaseTemplate(item, {
-                    conteudoButtons: ['ver_video_aluno', 'ver_questao_site', 'salvar_link_video'],
-                    comunicacaoButtons: ['abrir_gmail_buscar_ticket'],
-                    fluxoButtons: ['mudar_pronto_reanalise']
-                });
+            getButtonConfigurations(item) {
+                return {
+                    conteudoButtons: [
+                        createBtnConfig.verVideoAluno(item.ticket),
+                        createBtnConfig.verQuestaoSite(item.ticket),
+                        createBtnConfig.salvarLinkVideo(item.ticket)
+                    ],
+                    comunicacaoButtons: [
+                        createBtnConfig.abrirGmailBuscarTicket(item.ticket)
+                    ],
+                    fluxoButtons: [
+                        createBtnConfig.mudarProntoReanalise(item.ticket)
+                    ]
+                };
             }
         }
 
         class RejeitadoStatusStrategy extends StatusSectionStrategy {
-            render(item) {
-                return renderBaseTemplate(item, {
-                    conteudoButtons: ['ver_video_aluno', 'ver_questao_site'],
-                    comunicacaoButtons: ['abrir_gmail_buscar_ticket'],
-                    fluxoButtons: ['mudar_pronto_reanalise']
-                });
+            getButtonConfigurations(item) {
+                return {
+                    conteudoButtons: [
+                        createBtnConfig.verVideoAluno(item.ticket),
+                        createBtnConfig.verQuestaoSite(item.ticket)
+                    ],
+                    comunicacaoButtons: [
+                        createBtnConfig.abrirGmailBuscarTicket(item.ticket)
+                    ],
+                    fluxoButtons: [
+                        createBtnConfig.mudarProntoReanalise(item.ticket)
+                    ]
+                };
             }
         }
 
         class DefaultStatusStrategy extends StatusSectionStrategy {
             render(item) {
-                return `
-          <div class="status-section-container">
-          </div>
-        `;
+                return `<div class="status-section-container"></div>`;
             }
         }
 
         // -------------------------------------------------------------------------
-        // 5. REGISTRO ESTÁTICO DE ESTRATÉGIAS (Pré-configuradas e Imutáveis)
+        // 6. REGISTRO ESTÁTICO DE ESTRATÉGIAS
         // -------------------------------------------------------------------------
         const STATUS_STRATEGIES = Object.freeze({
             'Novo': new NovoStatusStrategy(),
@@ -233,7 +319,7 @@
         const defaultStrategy = new DefaultStatusStrategy();
 
         // -------------------------------------------------------------------------
-        // 6. INTERFACE PÚBLICA (Contexto)
+        // 7. INTERFACE PÚBLICA (Contexto)
         // -------------------------------------------------------------------------
         window.RespostaDetailSection = {
             render: function (item) {
