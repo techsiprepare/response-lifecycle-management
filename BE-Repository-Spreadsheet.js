@@ -56,8 +56,16 @@ class SpreadsheetRepository {
       if (!resposta.rowIndex) throw new Error("rowIndex obrigatório para salvar.");
       const respObj = new Resposta(resposta);
       const sheet = this.getSpreadsheet().getSheetByName('Gerenciamento_Respostas');
+      const colunasIgnoradas = ['Pré-Curadoria', 'Ver_Questão_Site'];
+      const headers = sheet.getRange(1, 1, 1, 21).getValues()[0];
+      const valores = respObj.toArray();
 
-      sheet.getRange(respObj.rowIndex, 1, 1, 21).setValues([respObj.toArray()]);
+      headers.forEach((header, index) => {
+        if (!colunasIgnoradas.includes(header.toString().trim())) {
+          sheet.getRange(respObj.rowIndex, index + 1).setValue(valores[index]);
+        }
+      });
+
     } finally {
       lock.releaseLock();
     }
