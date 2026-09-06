@@ -1,0 +1,92 @@
+<!--
+ =============================================================================
+ COMPONENTE/SERVIÇO: Modal de Alteração de Status
+ =============================================================================
+-->
+
+<script>
+    (function () {
+        window.ModalServices = window.ModalServices || {};
+
+        window.ModalServices.abrirModalMudarStatus = function (ticketId, novoStatus) {
+            if (!window.ModalServices.renderModalBase) {
+                return console.error('FE-Component-Modals.html não carregado.');
+            }
+
+            const eRejeitado = novoStatus === 'Rejeitado';
+            const eEmAnalise = novoStatus === 'Em análise';
+
+            let campoObrigatorioHtml = '';
+
+            if (eRejeitado) {
+                campoObrigatorioHtml = `
+          <div class="app-modal-field-group">
+            <label for="modal-dinamico-input" class="app-modal-field-label">Motivo da Rejeição *</label>
+            <textarea id="modal-dinamico-input" class="app-modal-input status-textarea" placeholder="Descreva o motivo..."></textarea>
+            <span id="modal-field-error" class="app-modal-error-text">Por favor, informe o motivo da rejeição.</span>
+          </div>
+        `;
+            } else if (eEmAnalise) {
+                campoObrigatorioHtml = `
+          <div class="app-modal-field-group">
+            <label for="modal-dinamico-input" class="app-modal-field-label">Responsável *</label>
+            <input type="text" id="modal-dinamico-input" class="app-modal-input" placeholder="Nome do responsável..." />
+            <span id="modal-field-error" class="app-modal-error-text">Por favor, informe o responsável.</span>
+          </div>
+        `;
+            }
+
+            const bodyHtml = `
+        <p>Deseja alterar o Ticket <strong>#${ticketId}</strong> para <strong>"${novoStatus}"</strong>?</p>
+        ${campoObrigatorioHtml}
+      `;
+
+            const modal = window.ModalServices.renderModalBase({
+                title: `Alterar Status: ${novoStatus}`,
+                bodyHtml,
+                buttons: [
+                    { label: 'Cancelar', variant: 'app-btn-light', onClick: () => modal.fechar() },
+                    {
+                        label: 'Confirmar',
+                        variant: 'app-btn-blue',
+                        onClick: () => {
+                            const novosCampos = { status: novoStatus };
+
+                            if (eRejeitado || eEmAnalise) {
+                                const inputEl = document.getElementById('modal-dinamico-input');
+                                const errorEl = document.getElementById('modal-field-error');
+                                const valor = inputEl?.value.trim();
+
+                                if (!valor) {
+                                    inputEl?.classList.add('input-error');
+                                    errorEl?.classList.add('visible');
+                                    inputEl?.focus();
+                                    return;
+                                }
+
+                                if (eRejeitado) novosCampos.motivo = valor;
+                                if (eEmAnalise) novosCampos.responsaveis = valor;
+                            }
+
+                            if (window.AppStore?.atualizarTicket) {
+                                window.AppStore.atualizarTicket(ticketId, novosCampos);
+                            } else {
+                                console.error('AppStore.atualizarTicket não está disponível.');
+                            }
+
+                            modal.fechar();
+                        }
+                    }
+                ]
+            });
+
+            const inputEl = document.getElementById('modal-dinamico-input');
+            if (inputEl) {
+                inputEl.oninput = () => {
+                    inputEl.classList.remove('input-error');
+                    document.getElementById('modal-field-error')?.classList.remove('visible');
+                };
+            }
+        };
+    })();
+</script>

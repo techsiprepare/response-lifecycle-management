@@ -1,0 +1,161 @@
+<!--
+ =============================================================================
+ COMPONENTE BASE: Modais (Estilos Gerais e Método de Renderização Base)
+ =============================================================================
+-->
+
+<script>
+  (function () {
+    // -------------------------------------------------------------------------
+    // 1. ESTILOS ISOLADOS (Sem CSS Inline)
+    // -------------------------------------------------------------------------
+    if (!document.getElementById('style-app-modals')) {
+      const style = document.createElement('style');
+      style.id = 'style-app-modals';
+      style.textContent = `
+        .app-modal-backdrop { 
+          position: fixed; 
+          inset: 0; 
+          background: rgba(0,0,0,0.4); 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          z-index: 9999; 
+          backdrop-filter: blur(2px); 
+        }
+
+        .app-modal-card { 
+          background: #ffffff; 
+          border-radius: 12px; 
+          width: 100%; 
+          max-width: 460px; 
+          margin: 16px; 
+          display: flex; 
+          flex-direction: column; 
+          overflow: hidden; 
+          box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); 
+        }
+
+        .app-modal-header { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          padding: 14px 18px; 
+          border-bottom: 1px solid #e2e8f0; 
+          font-weight: 700; 
+          color: #2d3748; 
+        }
+
+        .app-modal-close { 
+          background: none; 
+          border: none; 
+          font-size: 1.2rem; 
+          color: #a0aec0; 
+          cursor: pointer; 
+        }
+
+        .app-modal-body { 
+          padding: 18px; 
+          font-size: 0.9rem; 
+          color: #4a5568; 
+          display: flex; 
+          flex-direction: column; 
+          gap: 12px; 
+        }
+
+        .app-modal-footer { 
+          padding: 10px 18px; 
+          background: #f7fafc; 
+          border-top: 1px solid #e2e8f0; 
+          display: flex; 
+          justify-content: flex-end; 
+          gap: 8px; 
+        }
+
+        .app-modal-field-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-top: 4px;
+        }
+
+        .app-modal-field-label {
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: #4a5568;
+          text-transform: uppercase;
+        }
+
+        .app-modal-input {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          font-size: 0.875rem;
+          outline: none;
+          box-sizing: border-box;
+        }
+
+        .app-modal-input:focus {
+          border-color: #3b82f6;
+        }
+
+        .app-modal-input.input-error {
+          border-color: #ef4444;
+        }
+
+        .app-modal-error-text {
+          color: #ef4444;
+          font-size: 0.75rem;
+          display: none;
+        }
+
+        .app-modal-error-text.visible {
+          display: block;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    window.ModalServices = window.ModalServices || {};
+
+    window.ModalServices.fechar = function () {
+      document.getElementById('app-active-modal')?.remove();
+    };
+
+    // -------------------------------------------------------------------------
+    // 2. BASE RENDERIZADORA DO MODAL
+    // -------------------------------------------------------------------------
+    window.ModalServices.renderModalBase = function ({ title, bodyHtml, buttons = [] }) {
+      window.ModalServices.fechar();
+
+      const backdrop = document.createElement('div');
+      backdrop.id = 'app-active-modal';
+      backdrop.className = 'app-modal-backdrop';
+
+      const footerBtnsHtml = buttons.map(btn =>
+        window.AppButton ? window.AppButton.render({ label: btn.label, variant: btn.variant, onClickHandler: btn.onClick })
+          : `<button type="button" class="app-btn">${btn.label}</button>`
+      ).join('');
+
+      backdrop.innerHTML = `
+              <div class="app-modal-card">
+                <div class="app-modal-header">
+                  <span>${title}</span>
+                  <button type="button" class="app-modal-close" id="app-modal-close-btn">✕</button>
+                </div>
+                <div class="app-modal-body">${bodyHtml}</div>
+                <div class="app-modal-footer">${footerBtnsHtml}</div>
+              </div>
+            `;
+
+      document.body.appendChild(backdrop);
+
+      const fechar = () => window.ModalServices.fechar();
+      document.getElementById('app-modal-close-btn').onclick = fechar;
+      backdrop.onclick = (e) => e.target === backdrop && fechar();
+
+      return { fechar };
+    };
+  })();
+</script>

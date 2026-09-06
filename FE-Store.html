@@ -110,6 +110,26 @@
         },
 
         // -------------------------------------------------------------------------
+        // ACTIONS PÚBLICAS: Atualização de ticket
+        // -------------------------------------------------------------------------
+        atualizarTicket(ticketId, novosCampos) {
+            const resposta = this.state.respostas?.find(r => this._ticketsIguais(r.ticket, ticketId));
+
+            if (!resposta) {
+                console.error(`Ticket #${ticketId} não encontrado na store.`);
+                return false;
+            }
+
+            const respostaAtualizada = { ...resposta, ...novosCampos };
+            const novasRespostas = this.state.respostas.map(r =>
+                this._ticketsIguais(r.ticket, ticketId) ? respostaAtualizada : r
+            );
+
+            this.setState({ respostas: novasRespostas, loading: true }, true, respostaAtualizada);
+            return true;
+        },
+
+        // -------------------------------------------------------------------------
         // MÉTODO INTERNO: Busca registro atualizado no backend e aplica no state
         // -------------------------------------------------------------------------
         _fetchEAtualizarTicket(ticket) {
@@ -124,13 +144,13 @@
                     const respostasAtualizadas = existe
                         ? this.state.respostas.map((item) =>
                             this._ticketsIguais(item.ticket, ticket) ? dadosAtualizados : item
-                          )
+                        )
                         : [...this.state.respostas, dadosAtualizados];
 
                     // Mantém o ticketSelecionado sincronizado se for o mesmo ticket
                     const ticketSelecionado =
                         this.state.ticketSelecionado &&
-                        this._ticketsIguais(this.state.ticketSelecionado.ticket, ticket)
+                            this._ticketsIguais(this.state.ticketSelecionado.ticket, ticket)
                             ? dadosAtualizados
                             : this.state.ticketSelecionado;
 
