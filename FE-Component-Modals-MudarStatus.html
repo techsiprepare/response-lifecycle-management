@@ -8,7 +8,7 @@
     (function () {
         window.ModalServices = window.ModalServices || {};
 
-        window.ModalServices.abrirModalMudarStatus = function (item, novoStatus) {
+        window.ModalServices.abrirModalMudarStatus = function (item, novoStatus, varianteBotao = 'app-btn-blue') {
             if (!window.ModalServices.renderModalBase) {
                 return console.error('FE-Component-Modals.html não carregado.');
             }
@@ -42,13 +42,13 @@
       `;
 
             const modal = window.ModalServices.renderModalBase({
-                title: `Alterar Status: ${novoStatus} — #${item.ticket}`,
+                title: `Alterar Status`,
                 bodyHtml,
                 buttons: [
                     { label: 'Cancelar', variant: 'app-btn-light', onClick: () => modal.fechar() },
                     {
                         label: 'Confirmar',
-                        variant: 'app-btn-blue',
+                        variant: varianteBotao,
                         onClick: () => {
                             const novosCampos = { status: novoStatus };
 

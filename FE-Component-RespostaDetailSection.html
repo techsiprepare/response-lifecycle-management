@@ -141,32 +141,32 @@
             aprovarTicket: (item) => ({
                 label: 'Aprovar Ticket',
                 variant: 'app-btn-success',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Aprovado')
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Aprovado', 'app-btn-success')
             }),
             devolverAjustes: (item) => ({
                 label: 'Devolver p/ Ajustes',
-                variant: 'app-btn-light',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Devolvido para Ajustes')
+                variant: 'app-btn-yellow',
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Devolvido para Ajustes', 'app-btn-yellow')
             }),
             rejeitarTicket: (item) => ({
                 label: 'Rejeitar Ticket',
                 variant: 'app-btn-danger',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Rejeitado')
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Rejeitado', 'app-btn-danger')
             }),
             mudarProntoReanalise: (item) => ({
                 label: 'Mudar p/ Pronto p/ Reanálise',
                 variant: 'app-btn-purple',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Pronto p/ Reanálise')
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Pronto p/ Reanálise', 'app-btn-purple')
             }),
             mudarProntoParaAnalise: (item) => ({
                 label: 'Mudar p/ Pronto p/ Análise',
                 variant: 'app-btn-blue',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Pronto p/ Análise')
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Pronto p/ Análise', 'app-btn-blue')
             }),
             mudarEmAnalise: (item) => ({
                 label: 'Mudar p/ Em análise',
                 variant: 'app-btn-orange',
-                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Em análise')
+                onClick: () => window.ModalServices.abrirModalMudarStatus(item, 'Em análise', 'app-btn-orange')
             })
         };
 

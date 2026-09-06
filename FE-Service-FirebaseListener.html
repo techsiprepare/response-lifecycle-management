@@ -8,7 +8,7 @@
     correspondente no AppStore.
 
     Este módulo NÃO conhece detalhes de UI, fetch de dados ou regras de
-    negócio — apenas roteia eventos para as actions corretas.
+    negócio - apenas roteia eventos para as actions corretas.
 
   FLUXO:
     Firebase SSE → _handleEvento() → switch(status)
@@ -106,12 +106,12 @@
                 });
             },
 
-            // Gravação concluída com sucesso — mantém overlay até o dado chegar do backend
+            // Gravação concluída com sucesso - mantém overlay até o dado chegar do backend
             _sucesso(ticket) {
                 window.AppStore._fetchEAtualizarTicket(ticket);
             },
 
-            // Gravação encerrada com erro — remove do array e avisa o usuário
+            // Gravação encerrada com erro - remove do array e avisa o usuário
             _erro(ticket) {
                 window.AppStore.concluirProcessamentoTicket(ticket);
 

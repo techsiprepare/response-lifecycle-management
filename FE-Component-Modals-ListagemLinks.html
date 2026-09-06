@@ -45,7 +45,7 @@
                     font-size: 0.8rem; color: #718096; 
                 }
 
-                #app-active-modal .app-modal-card { max-width: 540px; }
+                #app-active-modal .app-modal-card { max-width: 450px; }
             `;
             document.head.appendChild(style);
         }
@@ -64,7 +64,7 @@
                 <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" onclick="window.open('${safeUrl}', '_blank'); return false;" class="link-item">
                     <div class="link-header">
                         <span class="link-badge ${badgeClass}">${badgeLabel}</span>
-                        <span class="link-time">${dataHora || '—'}</span>
+                        <span class="link-time">${dataHora || '-'}</span>
                     </div>
                     ${descricao ? `<div class="link-desc">${descricao}</div>` : ''}
                 </a>
@@ -109,7 +109,7 @@
             if (!resposta) return console.error('Parâmetro "resposta" é obrigatório.');
 
             const modal = window.ModalServices.renderModalBase({
-                title: `${titulo} — Ticket ${resposta.ticket || ''}`,
+                title: `${titulo}`,
                 bodyHtml: _buildLinkListHtml(resposta, campoOriginal, campoReenvio),
                 buttons: [
                     { label: 'Fechar', variant: 'app-btn-light', onClick: () => modal.fechar() }
