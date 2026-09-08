@@ -111,7 +111,21 @@
             verQuestaoSite: (item) => ({
                 label: 'Ver Questão no Site',
                 variant: 'app-btn-light',
-                onClick: () => { } // redirecionamento direto a ser implementado
+                onClick: () => {
+                    if (item && item.verQuestaoSite) {
+                        window.open(item.verQuestaoSite, '_blank');
+                    } else {
+                        if (window.FEComponenteToast && typeof window.FEComponenteToast.exibir === 'function') {
+                            window.FEComponenteToast.exibir({
+                                texto: 'Link da questão não disponível para este item.',
+                                cor: '#d32f2f',
+                                duracao: 3000
+                            });
+                        } else {
+                            window.alert('Link da questão não disponível para este item.');
+                        }
+                    }
+                }
             }),
             abrirGmailBuscarTicket: (item) => ({
                 label: 'Abrir Gmail (Buscar Ticket)',

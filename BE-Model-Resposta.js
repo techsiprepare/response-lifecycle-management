@@ -22,7 +22,23 @@ class Resposta {
     this.status = dados.status;
     this.motivo = dados.motivo;
     this.responsavel = dados.responsavel;
+    this.verQuestaoSite = this._gerarVerQuestaoSite(dados);
     this.reenvios = dados.reenvios || [];
+  }
+
+  _gerarVerQuestaoSite(dados) {
+    const valor = dados.verQuestaoSite;
+    if (valor && typeof valor === 'string' && valor.startsWith('http')) {
+      return valor;
+    }
+
+    if (dados.idProva && dados.questaoNum && dados.tipo && valor !== '❌ Inexistente') {
+      const tipoStr = String(dados.tipo).trim();
+      const tipoFormatado = tipoStr ? tipoStr.charAt(0).toUpperCase() + tipoStr.slice(1).toLowerCase() : '';
+      return `https://techsiprepare.github.io/#visualizar?prova=${dados.idProva}&questao=${dados.questaoNum}-${tipoFormatado}`;
+    }
+
+    return '';
   }
 
   _formatarDataHora(valor) {
@@ -44,7 +60,8 @@ class Resposta {
       this.nomeCompleto, this.telefone, this.ra, this.periodo, this.idProva,
       this.questaoNum, this.tipo, this.assuntoPrincipal, this.urlVideoOriginal,
       this.autorizacao, this.urlAtualizada, this.autorizacaoAtualizada,
-      this.urlVideoOficial, this.preCuradoria, this.status, this.motivo, this.responsavel
+      this.urlVideoOficial, this.preCuradoria, this.status, this.motivo,
+      this.responsavel, this.verQuestaoSite
     ];
   }
 }

@@ -67,7 +67,8 @@ class SpreadsheetRepository {
       periodo: row[7], idProva: row[8], questaoNum: row[9], tipo: row[10],
       assuntoPrincipal: row[11], urlVideoOriginal: row[12], autorizacao: row[13],
       urlAtualizada: row[14], autorizacaoAtualizada: row[15], urlVideoOficial: row[16],
-      preCuradoria: row[17], status: row[18], motivo: row[19], responsavel: row[20]
+      preCuradoria: row[17], status: row[18], motivo: row[19], responsavel: row[20],
+      verQuestaoSite: row[21]
     });
   }
 
@@ -91,7 +92,7 @@ class SpreadsheetRepository {
   }
 
   static get COLUNAS_IGNORADAS() {
-    return ['URL Atualizada', 'Autorização Atualizada', 'Pré-Curadoria', 'Ver_Questão_Site'];
+    return ['URL Atualizada', 'Autorização Atualizada', 'Pré-Curadoria', 'Ver_Questão_Site', 'Ver_Questao_Site'];
   }
 
   salvarResposta(resposta) {
@@ -103,7 +104,8 @@ class SpreadsheetRepository {
       const respObj = new Resposta(resposta);
       const sheet = this.getSpreadsheet().getSheetByName('Gerenciamento_Respostas');
       const colunasIgnoradas = SpreadsheetRepository.COLUNAS_IGNORADAS;
-      const headers = sheet.getRange(1, 1, 1, 21).getValues()[0];
+      const lastCol = Math.max(sheet.getLastColumn(), 22);
+      const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
       const valores = respObj.toArray();
 
       headers.forEach((header, index) => {

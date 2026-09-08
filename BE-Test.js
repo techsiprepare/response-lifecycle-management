@@ -79,11 +79,20 @@ function testarClasseResposta() {
     }
 
     const arr = resposta.toArray();
-    if (!Array.isArray(arr) || arr.length !== 21 || arr[0] !== 'TK-TESTE') {
-      throw new Error(`Método toArray() incorreto. Esperado 21 colunas, gerou: ${arr.length}`);
+    if (!Array.isArray(arr) || arr.length !== 22 || arr[0] !== 'TK-TESTE') {
+      throw new Error(`Método toArray() incorreto. Esperado 22 colunas, gerou: ${arr.length}`);
     }
 
-    Logger.log("  └ [OK] Regra de associação por ticket e conversão em Array(21) validadas.");
+    const respostaComLink = new Resposta({
+      idProva: 'PRV-001',
+      questaoNum: 1,
+      tipo: 'discursiva'
+    });
+    if (respostaComLink.verQuestaoSite !== 'https://techsiprepare.github.io/#visualizar?prova=PRV-001&questao=1-Discursiva') {
+      throw new Error(`Geração de verQuestaoSite incorreta: ${respostaComLink.verQuestaoSite}`);
+    }
+
+    Logger.log("  └ [OK] Regra de associação por ticket, conversão em Array(22) e geração de verQuestaoSite validadas.");
     return true;
   } catch (err) {
     Logger.log(`  └ [FALHA] ${err.message}`);
