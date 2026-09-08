@@ -18,18 +18,46 @@ class SpreadsheetRepository {
     }));
   }
 
+  getQuestoes() {
+    const sheet = this.getSpreadsheet().getSheetByName('Questoes_Enade');
+    if (!sheet) return [];
+    const values = sheet.getDataRange().getValues().slice(1);
+    return values.map(row => new Questao({
+      idProva: row[0],
+      questaoNum: row[1],
+      tipo: row[2],
+      paginaPdf: row[3],
+      bloquear: row[4],
+      totalTentativas: row[5]
+    }));
+  }
+
   getProvas() {
     const sheet = this.getSpreadsheet().getSheetByName('Provas_Enade');
     if (!sheet) return [];
     const values = sheet.getDataRange().getValues().slice(1);
-    return values.map(row => new Prova({
-      idProva: row[0],
-      ano: row[1],
-      areaProva: row[2],
-      modalidade: row[3],
-      numeroCaderno: row[4],
-      linkProva: row[5]
-    }));
+    const questoes = this.getQuestoes();
+
+    const questoesPorIdProva = questoes.reduce((acc, q) => {
+      if (q.idProva) {
+        (acc[q.idProva] = acc[q.idProva] || []).push(q);
+      }
+      return acc;
+    }, {});
+
+    return values.map(row => {
+      const prova = new Prova({
+        idProva: row[0],
+        ano: row[1],
+        areaProva: row[2],
+        modalidade: row[3],
+        numeroCaderno: row[4],
+        linkProva: row[5]
+      });
+      const associadas = questoesPorIdProva[prova.idProva] || [];
+      associadas.forEach(q => prova.adicionarQuestao(q));
+      return prova;
+    });
   }
 
   _mapRowToResposta(row, index) {

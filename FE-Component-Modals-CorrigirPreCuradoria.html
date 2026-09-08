@@ -2,209 +2,194 @@
     (function () {
         window.ModalServices = window.ModalServices || {};
 
-        // -------------------------------------------------------------------------
-        // 1. ESTILOS OTIMIZADOS
-        // -------------------------------------------------------------------------
+        // 1. ESTILO ESPECÍFICO DE LARGURA (O restante reutiliza o FE-Component-Modals.html)
         if (!document.getElementById('style-modal-corrigir-precuradoria')) {
             const style = document.createElement('style');
             style.id = 'style-modal-corrigir-precuradoria';
-            style.textContent = `
-                .prova-modal-search {
-                    margin-bottom: 12px;
-                }
-                .prova-list {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                    max-height: 350px;
-                    overflow-y: auto;
-                    padding-right: 4px;
-                    
-                    /* Oculta barra de scroll mantendo a funcionalidade de rolagem */
-                    scrollbar-width: none; /* Firefox */
-                    -ms-overflow-style: none; /* IE e Edge */
-                }
-                .prova-list::-webkit-scrollbar {
-                    display: none; /* Chrome, Safari e Opera */
-                }
-                .prova-item {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 6px;
-                    padding: 12px;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    background: #ffffff;
-                    text-decoration: none;
-                    color: #2d3748;
-                    transition: border-color 0.2s ease, background-color 0.2s ease;
-                    cursor: pointer;
-                }
-                .prova-item:hover {
-                    border-color: #3b82f6;
-                    background: #f8fafc;
-                }
-                .prova-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    gap: 8px;
-                }
-                .prova-badge {
-                    font-size: 0.7rem;
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    padding: 3px 8px;
-                    border-radius: 12px;
-                    white-space: nowrap;
-                    background: #ebf8ff;
-                    color: #2b6cb0;
-                    max-width: 180px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    display: inline-block;
-                }
-                .prova-ano {
-                    font-size: 0.75rem;
-                    font-weight: 600;
-                    color: #718096;
-                }
-                .prova-area {
-                    font-size: 0.88rem;
-                    font-weight: 600;
-                    color: #2d3748;
-                }
-                .prova-details {
-                    font-size: 0.78rem;
-                    color: #718096;
-                    display: flex;
-                    gap: 12px;
-                }
-                .prova-link-btn {
-                    font-size: 0.75rem;
-                    color: #3182ce;
-                    text-decoration: none;
-                    margin-top: 2px;
-                    width: fit-content;
-                }
-                .prova-link-btn:hover {
-                    text-decoration: underline;
-                }
-                .prova-list-empty {
-                    font-size: 0.85rem;
-                    color: #a0aec0;
-                    font-style: italic;
-                    text-align: center;
-                    padding: 16px 0;
-                }
-                #app-active-modal .app-modal-card { max-width: 500px; }
-            `;
+            style.textContent = `#app-active-modal .app-modal-card { max-width: 420px; }`;
             document.head.appendChild(style);
         }
 
-        // -------------------------------------------------------------------------
         // 2. MÉTODO DE ABERTURA DO MODAL
-        // -------------------------------------------------------------------------
         window.ModalServices.abrirModalCorrigirPreCuradoria = function (resposta) {
             if (!window.ModalServices.renderModalBase) {
                 return console.error('FE-Component-Modals.html ausente.');
             }
-            if (!resposta) {
-                return console.error('Parâmetro "resposta" é obrigatório.');
+            if (!resposta?.ticket) {
+                return console.error('Parâmetro "resposta" é obrigatório e deve conter um ticket.');
             }
 
+            // Estrutura HTML com suporte a mensagens de erro inline
             const bodyHtml = `
-                <div class="app-modal-field-group prova-modal-search">
-                    <input type="text" id="prova-search-input" class="app-modal-input" placeholder="Buscar prova por ID, Área, Ano..." />
-                </div>
-                <div id="prova-list-container" class="prova-list">
-                    <div class="prova-list-empty">Carregando provas...</div>
-                </div>
-            `;
+        <div class="app-modal-field-group">
+          <label for="prova-id-select" class="app-modal-field-label">Selecione o ID da Prova:</label>
+          <select id="prova-id-select" class="app-modal-input" disabled>
+            <option value="">Carregando IDs...</option>
+          </select>
+          <span id="err-prova-select" class="app-modal-error-text">Por favor, selecione um ID de prova válido.</span>
+        </div>
 
-            let modalRef = null;
-            let listaProvasCache = [];
+        <div class="app-modal-field-group">
+          <label for="questao-num-select" class="app-modal-field-label">Selecione a Questão:</label>
+          <select id="questao-num-select" class="app-modal-input" disabled>
+            <option value="">Selecione primeiro uma prova...</option>
+          </select>
+          <span id="err-questao-select" class="app-modal-error-text">Por favor, selecione uma questão válida.</span>
+        </div>
+      `;
 
-            function renderListaProvas(provas, filtro = '') {
-                const container = document.getElementById('prova-list-container');
-                if (!container) return;
-
-                const termo = filtro.trim().toLowerCase();
-                const provasFiltradas = provas.filter(p => {
-                    if (!termo) return true;
-                    return (
-                        String(p.idProva || '').toLowerCase().includes(termo) ||
-                        String(p.areaProva || '').toLowerCase().includes(termo) ||
-                        String(p.ano || '').toLowerCase().includes(termo) ||
-                        String(p.modalidade || '').toLowerCase().includes(termo) ||
-                        String(p.numeroCaderno || '').toLowerCase().includes(termo)
-                    );
-                });
-
-                if (provasFiltradas.length === 0) {
-                    container.innerHTML = `<div class="prova-list-empty">Nenhuma prova encontrada.</div>`;
-                    return;
-                }
-
-                container.innerHTML = provasFiltradas.map(prova => `
-                    <div class="prova-item" data-id="${prova.idProva}">
-                        <div class="prova-header">
-                            <span class="prova-badge" title="ID: ${prova.idProva}">ID: ${prova.idProva}</span>
-                            <span class="prova-ano">Ano: ${prova.ano || '-'}</span>
-                        </div>
-                        <div class="prova-area">${prova.areaProva || 'Área não informada'}</div>
-                        <div class="prova-details">
-                            <span>Modalidade: ${prova.modalidade || '-'}</span>
-                            <span>Caderno: ${prova.numeroCaderno || '-'}</span>
-                        </div>
-                        ${prova.linkProva ? `<a href="${prova.linkProva}" target="_blank" rel="noopener noreferrer" class="prova-link-btn" onclick="event.stopPropagation();">Ver Prova ↗</a>` : ''}
-                    </div>
-                `).join('');
-
-                // Event listener para seleção da prova
-                container.querySelectorAll('.prova-item').forEach(el => {
-                    el.onclick = () => {
-                        const idSelecionado = el.getAttribute('data-id');
-                        if (window.AppStore?.atualizarTicket) {
-                            window.AppStore.atualizarTicket(resposta.ticket, {
-                                idProva: idSelecionado,
-                                preCuradoria: '✅ Válido (Prova e Questão existem)'
-                            });
-                        }
-                        modalRef.fechar();
-                    };
-                });
-            }
-
-            modalRef = window.ModalServices.renderModalBase({
-                title: `Corrigir Pré-Curadoria - Ticket #${resposta.ticket}`,
+            // Renderização do Modal
+            const modalRef = window.ModalServices.renderModalBase({
+                title: `Corrigir Pré-Curadoria`,
                 bodyHtml,
                 buttons: [
-                    { label: 'Cancelar', variant: 'app-btn-light', onClick: () => modalRef.fechar() }
+                    {
+                        label: 'Cancelar',
+                        variant: 'app-btn-light',
+                        onClick: () => modalRef.fechar()
+                    },
+                    {
+                        label: 'Salvar',
+                        variant: 'app-btn-orange',
+                        onClick: salvarAlteracoes
+                    }
                 ]
             });
 
-            // Input listener para filtro dinâmico
-            const searchInput = document.getElementById('prova-search-input');
-            if (searchInput) {
-                searchInput.oninput = (e) => {
-                    renderListaProvas(listaProvasCache, e.target.value);
-                };
+            // Mapeamento de Elementos do DOM
+            const provaSelect = document.getElementById('prova-id-select');
+            const questaoSelect = document.getElementById('questao-num-select');
+            const errProva = document.getElementById('err-prova-select');
+            const errQuestao = document.getElementById('err-questao-select');
+
+            // --- VALIDAÇÃO INLINE ---
+            function validarForm() {
+                let valido = true;
+
+                if (!provaSelect?.value) {
+                    provaSelect?.classList.add('input-error');
+                    errProva?.classList.add('visible');
+                    valido = false;
+                } else {
+                    provaSelect?.classList.remove('input-error');
+                    errProva?.classList.remove('visible');
+                }
+
+                if (!questaoSelect?.value) {
+                    questaoSelect?.classList.add('input-error');
+                    errQuestao?.classList.add('visible');
+                    valido = false;
+                } else {
+                    questaoSelect?.classList.remove('input-error');
+                    errQuestao?.classList.remove('visible');
+                }
+
+                return valido;
             }
 
-            // Busca as provas via Google Apps Script backend
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
+            // --- SALVAMENTO ---
+            function salvarAlteracoes() {
+                if (!validarForm()) return;
+
+                const idSelecionado = provaSelect.value;
+                const questaoSelecionada = questaoSelect.value;
+
+                const provaObj = (window._cacheListaProvas || []).find(p => String(p.idProva) === String(idSelecionado));
+                const questaoObj = provaObj?.questoes?.find(q => String(q.questaoNum) === String(questaoSelecionada));
+
+                if (window.AppStore?.atualizarTicket) {
+                    const novosCampos = {
+                        idProva: idSelecionado,
+                        questaoNum: questaoSelecionada,
+                        preCuradoria: '✅ Válido (Prova e Questão existem)'
+                    };
+                    if (questaoObj?.tipo) {
+                        novosCampos.tipo = questaoObj.tipo;
+                    }
+                    window.AppStore.atualizarTicket(resposta.ticket, novosCampos);
+                }
+
+                modalRef.fechar();
+            }
+
+            // --- ATUALIZAÇÃO DO SELECT DE QUESTÕES ---
+            function atualizarSelectQuestoes(provas, idProvaSelecionado, questaoPreSelecionada = null) {
+                if (!questaoSelect) return;
+
+                if (!idProvaSelecionado) {
+                    questaoSelect.innerHTML = `<option value="">Selecione primeiro uma prova...</option>`;
+                    questaoSelect.disabled = true;
+                    return;
+                }
+
+                const provaObj = provas.find(p => String(p.idProva) === String(idProvaSelecionado));
+                const questoes = Array.isArray(provaObj?.questoes) ? provaObj.questoes : [];
+
+                if (questoes.length === 0) {
+                    questaoSelect.innerHTML = `<option value="">Nenhuma questão cadastrada nesta prova</option>`;
+                    questaoSelect.disabled = true;
+                    return;
+                }
+
+                const isBloqueada = (q) => {
+                    return q.bloquear === 'Bloqueado';
+                };
+
+                const optionsHtml = questoes.map(q => {
+                    const bloqueada = isBloqueada(q);
+                    const tipoLabel = q.tipo ? ` - ${q.tipo}` : '';
+                    const statusLabel = bloqueada ? ' (Bloqueada)' : '';
+                    return `<option value="${q.questaoNum}" ${bloqueada ? 'disabled' : ''}>Questão ${q.questaoNum}${tipoLabel}${statusLabel}</option>`;
+                }).join('');
+
+                questaoSelect.innerHTML = `<option value="">-- Selecione a Questão --</option>${optionsHtml}`;
+                questaoSelect.disabled = false;
+
+                if (questaoPreSelecionada && questoes.some(q => String(q.questaoNum) === String(questaoPreSelecionada))) {
+                    questaoSelect.value = questaoPreSelecionada;
+                }
+            }
+
+            // --- LISTENERS DE LIMPEZA DE ERRO E TROCA DE OPÇÃO ---
+            provaSelect?.addEventListener('change', (e) => {
+                provaSelect.classList.remove('input-error');
+                errProva?.classList.remove('visible');
+                atualizarSelectQuestoes(window._cacheListaProvas || [], e.target.value);
+            });
+
+            questaoSelect?.addEventListener('change', () => {
+                questaoSelect.classList.remove('input-error');
+                errQuestao?.classList.remove('visible');
+            });
+
+            // --- CARREGAMENTO DE DADOS VIA BACKEND ---
+            if (typeof google !== 'undefined' && google.script?.run) {
                 google.script.run
                     .withSuccessHandler((provas) => {
-                        listaProvasCache = Array.isArray(provas) ? provas : [];
-                        renderListaProvas(listaProvasCache, searchInput?.value || '');
+                        if (!provaSelect) return;
+
+                        const listaProvas = Array.isArray(provas) ? provas : [];
+                        window._cacheListaProvas = listaProvas;
+
+                        if (listaProvas.length === 0) {
+                            provaSelect.innerHTML = `<option value="">Nenhuma prova encontrada</option>`;
+                            return;
+                        }
+
+                        provaSelect.innerHTML = `
+              <option value="">-- Selecione o ID --</option>
+              ${listaProvas.map(p => `<option value="${p.idProva}">${p.idProva}</option>`).join('')}
+            `;
+                        provaSelect.disabled = false;
+
+                        if (resposta.idProva && listaProvas.some(p => String(p.idProva) === String(resposta.idProva))) {
+                            provaSelect.value = resposta.idProva;
+                            atualizarSelectQuestoes(listaProvas, resposta.idProva, resposta.questaoNum);
+                        }
                     })
                     .withFailureHandler((err) => {
                         console.error('Erro ao buscar provas:', err);
-                        const container = document.getElementById('prova-list-container');
-                        if (container) {
-                            container.innerHTML = `<div class="prova-list-empty" style="color:#ef4444;">Erro ao carregar provas.</div>`;
-                        }
+                        if (provaSelect) provaSelect.innerHTML = `<option value="">Erro ao carregar IDs</option>`;
                     })
                     .obterProvas();
             } else {

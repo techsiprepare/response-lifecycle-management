@@ -252,11 +252,24 @@ function testarControllerEErros() {
 }
 
 // -----------------------------------------------------------------------------
-// 7. TESTE UNITÁRIO E INTEGRAÇÃO: Classe Prova & Repository getProvas
+// 7. TESTE UNITÁRIO E INTEGRAÇÃO: Classe Questao, Prova & Repository getProvas
 // -----------------------------------------------------------------------------
 function testarClasseProvaELeitura() {
-  Logger.log("\n[TESTE 7] Classe Prova e getProvas()...");
+  Logger.log("\n[TESTE 7] Classe Questao, Prova e getProvas() O(N+M)...");
   try {
+    const questaoValida = new Questao({
+      idProva: 'PRV-001',
+      questaoNum: 1,
+      tipo: 'Objetiva',
+      paginaPdf: 3,
+      bloquear: 'Não',
+      totalTentativas: 0
+    });
+
+    if (questaoValida.idProva !== 'PRV-001' || questaoValida.tipo !== 'Objetiva') {
+      throw new Error("Mapeamento de atributos na classe Questao falhou.");
+    }
+
     const prova = new Prova({
       idProva: 'PRV-001',
       ano: 2023,
@@ -270,13 +283,21 @@ function testarClasseProvaELeitura() {
       throw new Error("Mapeamento de atributos na classe Prova falhou.");
     }
 
+    const questaoInvalida = new Questao({ idProva: 'PRV-OUTRA', questaoNum: 2 });
+    prova.adicionarQuestao(questaoValida);
+    prova.adicionarQuestao(questaoInvalida);
+
+    if (prova.questoes.length !== 1) {
+      throw new Error(`Associação de Questão a Prova por idProva falhou. Esperado: 1, Encontrado: ${prova.questoes.length}`);
+    }
+
     const repo = new SpreadsheetRepository();
     const provas = repo.getProvas();
     if (!Array.isArray(provas)) {
       throw new Error("O retorno de getProvas() deve ser um Array.");
     }
 
-    Logger.log(`  └ [OK] Instanciação da Classe Prova e leitura de Provas_Enade validadas (${provas.length} provas).`);
+    Logger.log(`  └ [OK] Instanciação de Questao/Prova e leitura de Provas_Enade com questões O(N+M) validadas (${provas.length} provas).`);
     return true;
   } catch (err) {
     Logger.log(`  └ [FALHA] ${err.message}`);
