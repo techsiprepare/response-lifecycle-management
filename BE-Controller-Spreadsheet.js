@@ -10,26 +10,15 @@ function include(filename) {
 }
 
 function carregarDadosIniciais() {
-  const repo = new SpreadsheetRepository();
-  const respostas = repo.getRespostas();
+  const respostaService = new RespostaService();
+  const respostas = respostaService.obterRespostasComReenvios();
 
   return JSON.parse(JSON.stringify(respostas));
 }
 
 function salvarRespostaENotificar(dadosResposta, sessionId) {
-  const repo = new SpreadsheetRepository();
-  const notifier = new FirebaseNotifier();
-
-  notifier.notificar(dadosResposta, sessionId, 'processando');
-
-  try {
-    repo.salvarResposta(dadosResposta);
-    notifier.notificar(dadosResposta, sessionId, 'sucesso');
-    return { sucesso: true };
-  } catch (err) {
-    notifier.notificar(dadosResposta, sessionId, 'erro');
-    throw err;
-  }
+  const respostaService = new RespostaService();
+  return respostaService.salvarRespostaENotificar(dadosResposta, sessionId);
 }
 
 function obterConfiguracaoPublicaFirebase() {
@@ -39,13 +28,13 @@ function obterConfiguracaoPublicaFirebase() {
 }
 
 function obterRespostaPorTicket(ticket) {
-  const repo = new SpreadsheetRepository();
-  const resposta = repo.getRespostaPorTicket(ticket);
-  return resposta;
+  const respostaService = new RespostaService();
+  return respostaService.obterRespostaPorTicket(ticket);
 }
 
 function obterProvas() {
-  const repo = new SpreadsheetRepository();
-  const provas = repo.getProvas();
+  const provaService = new ProvaService();
+  const provas = provaService.obterProvasComQuestoes();
+
   return JSON.parse(JSON.stringify(provas));
 }

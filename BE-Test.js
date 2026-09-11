@@ -11,11 +11,11 @@ function executarTodasAsValidacoes() {
 
   passouEmTodos = testarClasseReenvio() && passouEmTodos;
   passouEmTodos = testarClasseResposta() && passouEmTodos;
-  passouEmTodos = testarSpreadsheetRepositoryLeitura() && passouEmTodos;
-  passouEmTodos = testarSpreadsheetRepositoryEscritaSegura() && passouEmTodos;
+  passouEmTodos = testarRespostaServiceELeitura() && passouEmTodos;
+  passouEmTodos = testarRespostaRepositoryEscritaSegura() && passouEmTodos;
   passouEmTodos = testarFirebaseNotifier() && passouEmTodos;
   passouEmTodos = testarControllerEErros() && passouEmTodos;
-  passouEmTodos = testarClasseProvaELeitura() && passouEmTodos;
+  passouEmTodos = testarProvaServiceELeitura() && passouEmTodos;
   passouEmTodos = testarColunasIgnoradasEArrayFormula() && passouEmTodos;
 
   Logger.log("\n==================================================");
@@ -101,18 +101,18 @@ function testarClasseResposta() {
 }
 
 // -----------------------------------------------------------------------------
-// 3. TESTE DE INTEGRAÇÃO: Leitura do Repository O(N+M)
+// 3. TESTE DE INTEGRAÇÃO: Leitura via RespostaService O(N+M)
 // -----------------------------------------------------------------------------
-function testarSpreadsheetRepositoryLeitura() {
-  Logger.log("\n[TESTE 3] SpreadsheetRepository (Leitura O(N+M))...");
+function testarRespostaServiceELeitura() {
+  Logger.log("\n[TESTE 3] RespostaService (Leitura com Reenvios O(N+M))...");
   try {
     const inicio = new Date().getTime();
-    const repo = new SpreadsheetRepository();
-    const respostas = repo.getRespostas();
+    const respostaService = new RespostaService();
+    const respostas = respostaService.obterRespostasComReenvios();
     const tempo = new Date().getTime() - inicio;
 
     if (!Array.isArray(respostas)) {
-      throw new Error("O retorno de getRespostas() deve ser um Array.");
+      throw new Error("O retorno de obterRespostasComReenvios() deve ser um Array.");
     }
 
     Logger.log(`  └ [OK] Leitura realizada com sucesso (${respostas.length} registros em ${tempo}ms).`);
@@ -126,11 +126,13 @@ function testarSpreadsheetRepositoryLeitura() {
 // -----------------------------------------------------------------------------
 // 4. TESTE DE INTEGRAÇÃO: Escrita Segura (APENAS no ticket TK-TESTE)
 // -----------------------------------------------------------------------------
-function testarSpreadsheetRepositoryEscritaSegura() {
-  Logger.log("\n[TESTE 4] SpreadsheetRepository (Escrita Segura em 'TK-TESTE')...");
+function testarRespostaRepositoryEscritaSegura() {
+  Logger.log("\n[TESTE 4] RespostaRepository (Escrita Segura em 'TK-TESTE')...");
   try {
-    const repo = new SpreadsheetRepository();
-    const respostas = repo.getRespostas();
+    const respostaService = new RespostaService();
+    const respostaRepo = new RespostaRepository();
+
+    const respostas = respostaService.obterRespostasComReenvios();
 
     // BUSCA EXCLUSIVAMENTE O TICKET 'TK-TESTE'
     const itemTeste = respostas.find(r => r.ticket === 'TK-TESTE');
@@ -146,12 +148,12 @@ function testarSpreadsheetRepositoryEscritaSegura() {
     const itemParaAtualizar = JSON.parse(JSON.stringify(itemTeste));
     const marcaTempo = `Teste Automatizado: ${new Date().toLocaleTimeString('pt-BR')}`;
 
-    // Altera apenas o motivo e salva (sem restaurar o valor anterior)
+    // Altera apenas o motivo e salva no repositório
     itemParaAtualizar.motivo = marcaTempo;
-    repo.salvarResposta(itemParaAtualizar);
+    respostaRepo.salvarResposta(itemParaAtualizar);
 
-    // Validação re-lendo a planilha
-    const respostasRevisadas = repo.getRespostas();
+    // Validação re-lendo a planilha via service
+    const respostasRevisadas = respostaService.obterRespostasComReenvios();
     const itemPersistido = respostasRevisadas.find(r => r.ticket === 'TK-TESTE');
 
     if (!itemPersistido || itemPersistido.motivo !== marcaTempo) {
@@ -181,7 +183,6 @@ function testarFirebaseNotifier() {
       return true;
     }
 
-    // 1. Monta os argumentos conforme a nova assinatura: notificar(resposta, sessionId, status)
     const notifier = new FirebaseNotifier();
     const respostaFake = { ticket: 'TK-TESTE-FIREBASE' };
     const sessionIdFake = 'SESSION-TESTE-001';
@@ -190,7 +191,6 @@ function testarFirebaseNotifier() {
     Logger.log("  └ Enviando evento para o Realtime Database...");
     notifier.notificar(respostaFake, sessionIdFake, statusFake);
 
-    // 2. Faz o GET de leitura no mesmo nó para confirmar que o nó realmente existe lá
     const urlConsulta = `${dbUrl}/ultimo_evento.json?auth=${secret}`;
     const response = UrlFetchApp.fetch(urlConsulta, { method: 'get', muteHttpExceptions: true });
 
@@ -201,7 +201,6 @@ function testarFirebaseNotifier() {
 
     const payloadRecebido = JSON.parse(response.getContentText());
 
-    // 3. Valida o payload na nova estrutura plana: { ticket, sessionId, status, timestamp }
     if (!payloadRecebido || payloadRecebido.ticket !== 'TK-TESTE-FIREBASE') {
       throw new Error("O nó '/ultimo_evento' não contém os dados esperados após o envio.");
     }
@@ -234,11 +233,11 @@ function testarFirebaseNotifier() {
 function testarControllerEErros() {
   Logger.log("\n[TESTE 6] Controller & Tratamento de Erros...");
   try {
-    const repo = new SpreadsheetRepository();
+    const respostaRepo = new RespostaRepository();
 
     let disparouErroEsperado = false;
     try {
-      repo.salvarResposta({ ticket: 'TK-TESTE' }); // Sem rowIndex
+      respostaRepo.salvarResposta({ ticket: 'TK-TESTE' }); // Sem rowIndex
     } catch (e) {
       disparouErroEsperado = true;
     }
@@ -261,10 +260,10 @@ function testarControllerEErros() {
 }
 
 // -----------------------------------------------------------------------------
-// 7. TESTE UNITÁRIO E INTEGRAÇÃO: Classe Questao, Prova & Repository getProvas
+// 7. TESTE UNITÁRIO E INTEGRAÇÃO: Classe Questao, Prova & ProvaService
 // -----------------------------------------------------------------------------
-function testarClasseProvaELeitura() {
-  Logger.log("\n[TESTE 7] Classe Questao, Prova e getProvas() O(N+M)...");
+function testarProvaServiceELeitura() {
+  Logger.log("\n[TESTE 7] Classe Questao, Prova e ProvaService.obterProvasComQuestoes() O(N+M)...");
   try {
     const questaoValida = new Questao({
       idProva: 'PRV-001',
@@ -300,10 +299,10 @@ function testarClasseProvaELeitura() {
       throw new Error(`Associação de Questão a Prova por idProva falhou. Esperado: 1, Encontrado: ${prova.questoes.length}`);
     }
 
-    const repo = new SpreadsheetRepository();
-    const provas = repo.getProvas();
+    const provaService = new ProvaService();
+    const provas = provaService.obterProvasComQuestoes();
     if (!Array.isArray(provas)) {
-      throw new Error("O retorno de getProvas() deve ser um Array.");
+      throw new Error("O retorno de obterProvasComQuestoes() deve ser um Array.");
     }
 
     Logger.log(`  └ [OK] Instanciação de Questao/Prova e leitura de Provas_Enade com questões O(N+M) validadas (${provas.length} provas).`);
@@ -320,8 +319,8 @@ function testarClasseProvaELeitura() {
 function testarColunasIgnoradasEArrayFormula() {
   Logger.log("\n[TESTE 8] Validação de Colunas Ignoradas (ArrayFormula/Fórmulas vs colunasIgnoradas em salvarResposta)...");
   try {
-    const repo = new SpreadsheetRepository();
-    const sheet = repo.getSpreadsheet().getSheetByName('Gerenciamento_Respostas');
+    const respostaRepo = new RespostaRepository();
+    const sheet = respostaRepo.getSpreadsheet().getSheetByName('Gerenciamento_Respostas');
     if (!sheet) {
       throw new Error("Aba 'Gerenciamento_Respostas' não encontrada na planilha.");
     }
@@ -338,8 +337,8 @@ function testarColunasIgnoradasEArrayFormula() {
       ? sheet.getRange(2, 1, 1, lastCol).getFormulas()[0]
       : [];
 
-    // Obtém dinamicamente a lista de colunas ignoradas da classe SpreadsheetRepository
-    const colunasIgnoradas = SpreadsheetRepository.COLUNAS_IGNORADAS;
+    // Obtém a constante estática de colunas ignoradas da classe RespostaRepository
+    const colunasIgnoradas = RespostaRepository.COLUNAS_IGNORADAS;
     const colunasComFormulaNaoIgnoradas = [];
     const colunasComFormulaIgnoradas = [];
 
@@ -375,7 +374,7 @@ function testarColunasIgnoradasEArrayFormula() {
       throw new Error(
         `Existem colunas com ArrayFormula/Fórmula que NÃO estão na constante 'colunasIgnoradas':\n` +
         colunasComFormulaNaoIgnoradas.map(c => `     ❌ ${c}`).join('\n') +
-        `\n  💡 Solução: Adicione esses cabeçalhos em 'colunasIgnoradas' na função salvarResposta().`
+        `\n  💡 Solução: Adicione esses cabeçalhos em 'colunasIgnoradas' na classe RespostaRepository.`
       );
     }
 
