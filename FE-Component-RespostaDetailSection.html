@@ -111,26 +111,12 @@
             verQuestaoSite: (item) => ({
                 label: 'Ver Questão no Site',
                 variant: 'app-btn-light',
-                onClick: () => {
-                    if (item && item.verQuestaoSite) {
-                        window.open(item.verQuestaoSite, '_blank');
-                    } else {
-                        if (window.FEComponenteToast && typeof window.FEComponenteToast.exibir === 'function') {
-                            window.FEComponenteToast.exibir({
-                                texto: 'Link da questão não disponível para este item.',
-                                cor: '#d32f2f',
-                                duracao: 3000
-                            });
-                        } else {
-                            window.alert('Link da questão não disponível para este item.');
-                        }
-                    }
-                }
+                onClick: () => window.AppStore.verQuestaoSite(item)
             }),
             abrirGmailBuscarTicket: (item) => ({
                 label: 'Abrir Gmail (Buscar Ticket)',
                 variant: 'app-btn-light',
-                onClick: () => { } // redirecionamento direto a ser implementado
+                onClick: () => window.AppStore.abrirGmailBuscarTicket(item.ticket)
             }),
             verAutorizacao: (item) => ({
                 label: 'Ver Autorização',
@@ -140,17 +126,17 @@
             enviarBaremaAluno: (item) => ({
                 label: 'Enviar Barema para Aluno',
                 variant: 'app-btn-light',
-                onClick: () => window.ModalServices.abrirModalEnvioBarema(item)
+                onClick: () => { } // TODO: implementar window.ModalServices.abrirModalEnvioBarema(item)
             }),
             solicitarAvaliacaoProfessor: (item) => ({
                 label: 'Solicitar Avaliação p/ Professor',
                 variant: 'app-btn-light',
-                onClick: () => window.ModalServices.abrirModalSolicitarAvaliacao(item)
+                onClick: () => { } // TODO: implementar window.ModalServices.abrirModalSolicitarAvaliacao(item)
             }),
             salvarLinkVideo: (item) => ({
                 label: 'Salvar Link do Vídeo',
                 variant: 'app-btn-light',
-                onClick: () => window.ModalServices.abrirModalSalvarVideo(item)
+                onClick: () => { } // TODO: implementar window.ModalServices.abrirModalSalvarVideo(item)
             }),
             aprovarTicket: (item) => ({
                 label: 'Aprovar Ticket',

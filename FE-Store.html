@@ -1,7 +1,5 @@
 <script>
-    // -------------------------------------------------------------------------
-    // UTILITÁRIO: Geração de ID único de sessão
-    // -------------------------------------------------------------------------
+    // Utilitário: Gera ID único de sessão
     function gerarSessionId() {
         return typeof crypto !== 'undefined' && crypto.randomUUID
             ? crypto.randomUUID()
@@ -9,9 +7,7 @@
     }
 
     window.AppStore = {
-        // -------------------------------------------------------------------------
-        // STATE
-        // -------------------------------------------------------------------------
+        // --- 1. ESTADO E PROPRIEDADES ---
         state: {
             respostas: [],
             loading: true,
@@ -21,14 +17,9 @@
             ticketsEmProcessamento: []
         },
         listeners: [],
-
-        // Timestamp de quando a store iniciou na sessão
         horaInicioSessao: Date.now(),
 
-        // -------------------------------------------------------------------------
-        // CORE: Inicialização (apenas fetch inicial - listener é responsabilidade
-        // do FE-Service-FirebaseListener)
-        // -------------------------------------------------------------------------
+        // --- 2. CICLO DE VIDA E REATIVIDADE ---
         async init() {
             return new Promise((resolve, reject) => {
                 google.script.run
@@ -47,9 +38,6 @@
             });
         },
 
-        // -------------------------------------------------------------------------
-        // CORE: Leitura, escrita e notificação de estado
-        // -------------------------------------------------------------------------
         getState() {
             return this.state;
         },
@@ -79,44 +67,12 @@
             this.listeners.forEach((listener) => listener(this.state));
         },
 
-        // -------------------------------------------------------------------------
-        // HELPER INTERNO: Comparação de tickets normalizada
-        // -------------------------------------------------------------------------
-        _ticketsIguais(a, b) {
-            return String(a) === String(b);
-        },
-
-        // -------------------------------------------------------------------------
-        // ACTIONS PÚBLICAS: Ciclo de vida de tickets em processamento
-        // -------------------------------------------------------------------------
-
-        // Chamado pelo FirebaseListener quando status === 'processando'
-        marcarTicketEmProcessamento(ticket) {
-            const jaExiste = this.state.ticketsEmProcessamento.some((t) => this._ticketsIguais(t, ticket));
-            if (jaExiste) return;
-
-            this.setState({
-                ticketsEmProcessamento: [...this.state.ticketsEmProcessamento, ticket]
-            });
-        },
-
-        // Chamado pelo FirebaseListener quando status === 'sucesso' ou 'erro'
-        concluirProcessamentoTicket(ticket) {
-            this.setState({
-                ticketsEmProcessamento: this.state.ticketsEmProcessamento.filter(
-                    (t) => !this._ticketsIguais(t, ticket)
-                )
-            });
-        },
-
-        // -------------------------------------------------------------------------
-        // ACTIONS PÚBLICAS: Atualização de ticket
-        // -------------------------------------------------------------------------
+        // --- 3. GESTÃO DE TICKETS ---
         atualizarTicket(ticketId, novosCampos) {
             const resposta = this.state.respostas?.find(r => this._ticketsIguais(r.ticket, ticketId));
 
             if (!resposta) {
-                console.error(`Ticket #${ticketId} não encontrado na store.`);
+                console.error('Ticket #' + ticketId + ' não encontrado na store.');
                 return false;
             }
 
@@ -129,9 +85,86 @@
             return true;
         },
 
-        // -------------------------------------------------------------------------
-        // MÉTODO INTERNO: Busca registro atualizado no backend e aplica no state
-        // -------------------------------------------------------------------------
+        marcarTicketEmProcessamento(ticket) {
+            const jaExiste = this.state.ticketsEmProcessamento.some((t) => this._ticketsIguais(t, ticket));
+            if (jaExiste) return;
+
+            this.setState({
+                ticketsEmProcessamento: [...this.state.ticketsEmProcessamento, ticket]
+            });
+        },
+
+        concluirProcessamentoTicket(ticket) {
+            this.setState({
+                ticketsEmProcessamento: this.state.ticketsEmProcessamento.filter(
+                    (t) => !this._ticketsIguais(t, ticket)
+                )
+            });
+        },
+
+        // --- 4. INTEGRAÇÃO E LINKS EXTERNOS ---
+        verQuestaoSite(item) {
+            var url = item && item.verQuestaoSite;
+            if (url) {
+                window.open(url, '_blank');
+            } else {
+                if (window.FEComponenteToast && typeof window.FEComponenteToast.exibir === 'function') {
+                    window.FEComponenteToast.exibir({
+                        texto: 'Link da questão não disponível para este item.',
+                        cor: '#d32f2f',
+                        duracao: 3000
+                    });
+                } else {
+                    window.alert('Link da questão não disponível para este item.');
+                }
+            }
+        },
+
+        abrirGmailBuscarTicket(ticket) {
+            var query = encodeURIComponent('"' + ticket + '"');
+            var url = 'https://mail.google.com/mail/u/0/#search/' + query;
+            window.open(url, '_blank');
+        },
+
+        async verificarRascunhoExistente(ticket) {
+            return new Promise((resolve, reject) => {
+                google.script.run
+                    .withSuccessHandler((rascunho) => resolve(rascunho))
+                    .withFailureHandler((err) => reject(err))
+                    .verificarRascunhoExistente(ticket);
+            });
+        },
+
+        async criarRascunhoEmail(dados) {
+            this.setState({ loading: true });
+
+            return new Promise((resolve, reject) => {
+                google.script.run
+                    .withSuccessHandler((rascunho) => {
+                        this.setState({ loading: false });
+                        window.FEComponenteToast?.exibir({
+                            texto: 'Rascunho criado no Gmail com sucesso!',
+                            cor: '#2E7D32'
+                        });
+                        resolve(rascunho);
+                    })
+                    .withFailureHandler((err) => {
+                        this.setState({ loading: false });
+                        window.FEComponenteToast?.exibir({
+                            texto: 'Erro ao criar rascunho: ' + (err.message || err),
+                            cor: '#C62828'
+                        });
+                        reject(err);
+                    })
+                    .criarRascunhoEmail(dados);
+            });
+        },
+
+        // --- 5. MÉTODOS INTERNOS E HELPERS ---
+        _ticketsIguais(a, b) {
+            return String(a) === String(b);
+        },
+
         _fetchEAtualizarTicket(ticket) {
             if (!ticket) return;
 
@@ -139,7 +172,6 @@
                 .withSuccessHandler((dadosAtualizados) => {
                     if (!dadosAtualizados) return;
 
-                    // Atualiza o item na lista (ou adiciona se for novo)
                     const existe = this.state.respostas.some((item) => this._ticketsIguais(item.ticket, ticket));
                     const respostasAtualizadas = existe
                         ? this.state.respostas.map((item) =>
@@ -147,20 +179,17 @@
                         )
                         : [...this.state.respostas, dadosAtualizados];
 
-                    // Mantém o ticketSelecionado sincronizado se for o mesmo ticket
                     const ticketSelecionado =
                         this.state.ticketSelecionado &&
                             this._ticketsIguais(this.state.ticketSelecionado.ticket, ticket)
                             ? dadosAtualizados
                             : this.state.ticketSelecionado;
 
-                    // 1. Encerra o estado de processamento (remove overlay), atualiza a tela e notifica
                     this.concluirProcessamentoTicket(ticket);
                     this.setState({ respostas: respostasAtualizadas, ticketSelecionado });
 
-                    // 2. Exibe o toast de confirmação após tudo ser aplicado
                     window.FEComponenteToast?.exibir({
-                        texto: `O ticket "${ticket}" foi atualizado em tempo real.`,
+                        texto: 'O ticket "' + ticket + '" foi atualizado em tempo real.',
                         cor: '#2E7D32'
                     });
                 })
