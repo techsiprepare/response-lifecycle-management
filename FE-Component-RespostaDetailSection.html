@@ -1,53 +1,38 @@
-<!--
- =============================================================================
- COMPONENTE: RespostaDetailSection (Estratégias por Status com Modais e AppButton)
- =============================================================================
- RESPONSABILIDADE:
- Mapeia os status dos tickets para configurações de botões (rotulo, cor e ação).
- Transfere a renderização visual para o componente burro `AppButton` e
- delega regras de negócio interativas para modais ou serviços específicos.
- =============================================================================
--->
-
 <script>
     (function () {
-        // -------------------------------------------------------------------------
-        // 1. ESTILOS ISOLADOS
-        // -------------------------------------------------------------------------
+        // 1. ESTILIZAÇÕES (CSS Externo Injetado)
         const styleId = 'style-resposta-detail-section';
         if (!document.getElementById(styleId)) {
             const style = document.createElement('style');
             style.id = styleId;
             style.textContent = `
-        .status-section-container {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
+                .status-section-container {
+                  display: flex;
+                  flex-direction: column;
+                  gap: 16px;
+                }
 
-        .status-actions-group {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-          margin-top: 8px;
-        }
+                  .status-actions-group {
+                    display: flex;
+                    gap: 8px;
+                    flex-wrap: wrap;
+                    margin-top: 8px;
+                  }
 
-        .status-actions-group .info-label {
-          font-size: 0.72rem;
-          font-weight: 700;
-          color: #8fa0b0;
-          text-transform: uppercase;
-          width: 100%;
-          margin-bottom: 4px;
-        }
-      `;
+                .status-actions-group .info-label {
+                    font-size: 0.72rem;
+                    font-weight: 700;
+                    color: #8fa0b0;
+                    text-transform: uppercase;
+                    width: 100%;
+                    margin-bottom: 4px;
+                }
+            `;
             document.head.appendChild(style);
         }
 
-        // -------------------------------------------------------------------------
-        // 2. HELPER DE RENDERIZAÇÃO DE GRUPOS DE BOTÕES
-        // -------------------------------------------------------------------------
-        function renderButtonGroup(label, buttonConfigs) {
+        // 2. ESTRUTURA TEMPLATE / HTML
+        function getButtonGroupHTML(label, buttonConfigs) {
             if (!buttonConfigs || buttonConfigs.length === 0) return '';
 
             const buttonsHtml = buttonConfigs
@@ -59,49 +44,40 @@
                 .join('');
 
             return `
-                <div class="status-actions-group">
-                    <span class="info-label">${label}</span>
-                    ${buttonsHtml}
-                </div>
+              <div class="status-actions-group">
+                <span class="info-label">${label}</span>
+                ${buttonsHtml}
+              </div>
             `;
         }
 
-        // -------------------------------------------------------------------------
-        // 3. CONTRATO BASE DA ESTRATÉGIA DE SEÇÃO
-        // -------------------------------------------------------------------------
-        class StatusSectionStrategy {
-            /**
-             * Retorna as configurações de botões divididas por grupos/abas.
-             * @param {Object} item - Objeto do ticket/resposta atual.
-             * @returns {Object} { conteudoButtons, comunicacaoButtons, fluxoButtons }
-             */
-            getButtonConfigurations(item) {
-                return {
-                    conteudoButtons: [],
-                    comunicacaoButtons: [],
-                    fluxoButtons: []
-                };
-            }
-
-            render(item) {
-                const config = this.getButtonConfigurations(item);
-                const conteudoHtml = renderButtonGroup('Conteúdo e Revisão', config.conteudoButtons);
-                const comunicacaoHtml = renderButtonGroup('Comunicação', config.comunicacaoButtons);
-                const fluxoHtml = renderButtonGroup('Fluxo de Trabalho', config.fluxoButtons);
-
-                return `
-                    <div class="status-section-container">
-                        ${conteudoHtml}
-                        ${comunicacaoHtml}
-                        ${fluxoHtml}
-                    </div>
-                `;
-            }
+        function getSectionContainerHTML(conteudoHtml, comunicacaoHtml, fluxoHtml) {
+            return `
+              <div class="status-section-container">
+                  ${conteudoHtml}
+                  ${comunicacaoHtml}
+                  ${fluxoHtml}
+              </div>
+            `;
         }
 
-        // -------------------------------------------------------------------------
-        // 4. DICIONÁRIO DE CONFIGURAÇÕES DE BOTÕES REUTILIZÁVEIS
-        // -------------------------------------------------------------------------
+        // 3. LÓGICAS EXCLUSIVAS DE INTERFACE (Renderização e Montagem Visual)
+        window.RespostaDetailSection = {
+            render: function (item) {
+                if (!item || !item.status) return '';
+
+                const strategy = obterEstrategiaStatus(item.status);
+                const config = strategy.getButtonConfigurations(item);
+
+                const conteudoHtml = getButtonGroupHTML('Conteúdo e Revisão', config.conteudoButtons);
+                const comunicacaoHtml = getButtonGroupHTML('Comunicação', config.comunicacaoButtons);
+                const fluxoHtml = getButtonGroupHTML('Fluxo de Trabalho', config.fluxoButtons);
+
+                return getSectionContainerHTML(conteudoHtml, comunicacaoHtml, fluxoHtml);
+            }
+        };
+
+        // 4. LÓGICAS DE REGRA DE NEGÓCIO (Dicionário de Ações e Estratégias)
         const createBtnConfig = {
             verVideoAluno: (item) => ({
                 label: 'Ver Vídeo do Aluno',
@@ -175,9 +151,15 @@
             })
         };
 
-        // -------------------------------------------------------------------------
-        // 5. ESTRATÉGIAS CONCRETAS POR STATUS
-        // -------------------------------------------------------------------------
+        class StatusSectionStrategy {
+            getButtonConfigurations(item) {
+                return {
+                    conteudoButtons: [],
+                    comunicacaoButtons: [],
+                    fluxoButtons: []
+                };
+            }
+        }
 
         class NovoStatusStrategy extends StatusSectionStrategy {
             getButtonConfigurations(item) {
@@ -191,9 +173,8 @@
                         createBtnConfig.verVideoAluno(item),
                         createBtnConfig.verQuestaoSite(item)
                     ],
-                    fluxoButtons: [
-                        fluxoBtn
-                    ]
+                    comunicacaoButtons: [],
+                    fluxoButtons: [fluxoBtn]
                 };
             }
         }
@@ -307,15 +288,6 @@
             }
         }
 
-        class DefaultStatusStrategy extends StatusSectionStrategy {
-            render(item) {
-                return `<div class="status-section-container"></div>`;
-            }
-        }
-
-        // -------------------------------------------------------------------------
-        // 6. REGISTRO ESTÁTICO DE ESTRATÉGIAS
-        // -------------------------------------------------------------------------
         const STATUS_STRATEGIES = Object.freeze({
             'Novo': new NovoStatusStrategy(),
             'Em análise': new EmAnaliseStatusStrategy(),
@@ -326,18 +298,10 @@
             'Rejeitado': new RejeitadoStatusStrategy()
         });
 
-        const defaultStrategy = new DefaultStatusStrategy();
+        const defaultStrategy = new StatusSectionStrategy();
 
-        // -------------------------------------------------------------------------
-        // 7. INTERFACE PÚBLICA (Contexto)
-        // -------------------------------------------------------------------------
-        window.RespostaDetailSection = {
-            render: function (item) {
-                if (!item || !item.status) return '';
-
-                const strategy = STATUS_STRATEGIES[item.status] || defaultStrategy;
-                return strategy.render(item);
-            }
-        };
+        function obterEstrategiaStatus(status) {
+            return STATUS_STRATEGIES[status] || defaultStrategy;
+        }
     })();
 </script>

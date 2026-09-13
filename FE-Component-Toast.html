@@ -1,83 +1,97 @@
-<!--
-  =============================================================================
-  COMPONENTE: Toast
-  =============================================================================
-  RESPONSABILIDADE:
-    Exibir notificações temporárias (toasts) empilháveis no canto inferior
-    direito da tela, com animação de entrada e saída suaves.
-
-  COMPORTAMENTO:
-    - Cria o container de toasts sob demanda (lazy) na primeira chamada.
-    - Suporta múltiplos toasts simultâneos empilhados verticalmente.
-    - Animação: desliza para cima ao entrar e desaparece ao sair (opacity + translateY).
-    - Auto-remove: o toast é destruído do DOM após o fade-out de saída.
-
-  MODO DE USO:
-    window.FEComponenteToast.exibir({
-        texto: 'Mensagem para o usuário',
-        cor: '#2E7D32',    // Opcional. Padrão: '#323232'
-        duracao: 3000      // Opcional. Em ms. Padrão: 3000
-    });
-  =============================================================================
--->
-
 <script>
     (function () {
-        // -------------------------------------------------------------------------
-        // 1. ESTILOS (CSS Inline via Object.assign - sem folha de estilos separada)
-        // -------------------------------------------------------------------------
-
-        // -------------------------------------------------------------------------
-        // 2. ESTRUTURA & INTERAÇÕES (Container lazy + ciclo de vida do Toast)
-        // -------------------------------------------------------------------------
-        window.FEComponenteToast = {
-            exibir({ texto, cor = '#323232', duracao = 3000 }) {
-                let container = document.getElementById('toast-container');
-
-                if (!container) {
-                    container = document.createElement('div');
-                    container.id = 'toast-container';
-                    Object.assign(container.style, {
-                        position: 'fixed',
-                        bottom: '20px',
-                        right: '20px',
-                        zIndex: '9999',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '10px'
-                    });
-                    document.body.appendChild(container);
+        // 1. ESTILIZAÇÕES (CSS Externo Injetado)
+        const styleId = 'style-app-toast';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+                #toast-container {
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
                 }
 
-                const toast = document.createElement('div');
-                toast.innerText = texto;
-                Object.assign(toast.style, {
-                    backgroundColor: cor,
-                    color: '#fff',
-                    padding: '12px 20px',
-                    borderRadius: '6px',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                    fontSize: '14px',
-                    opacity: '0',
-                    transition: 'opacity 0.3s ease, transform 0.3s ease',
-                    transform: 'translateY(10px)'
-                });
+                .app-toast-item {
+                    color: #ffffff;
+                    padding: 12px 20px;
+                    border-radius: 6px;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    font-size: 14px;
+                    opacity: 0;
+                    transform: translateY(10px);
+                    transition: opacity 0.3s ease, transform 0.3s ease;
+                }
 
-                container.appendChild(toast);
+                .app-toast-item.visible {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            `;
+            document.head.appendChild(style);
+        }
 
-                // Animação de entrada
-                requestAnimationFrame(() => {
-                    toast.style.opacity = '1';
-                    toast.style.transform = 'translateY(0)';
-                });
+        window.FEComponenteToast = window.FEComponenteToast || {};
 
-                // Animação de saída + remoção do DOM
-                setTimeout(() => {
-                    toast.style.opacity = '0';
-                    toast.style.transform = 'translateY(10px)';
-                    setTimeout(() => toast.remove(), 300);
-                }, duracao);
+        // 2. ESTRUTURA TEMPLATE / HTML
+        function getToastContainerHTML() {
+            return `<div id="toast-container"></div>`;
+        }
+
+        function getToastItemHTML(texto) {
+            return texto;
+        }
+
+        // 3. LÓGICAS EXCLUSIVAS DE INTERFACE (Gerenciamento de DOM e Animações)
+        function obterOuCriarContainer() {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                const tempContainer = document.createElement('div');
+                tempContainer.innerHTML = getToastContainerHTML();
+                container = tempContainer.firstElementChild;
+                document.body.appendChild(container);
+            }
+            return container;
+        }
+
+        function animarECiclarToast(toastEl, cor, duracao) {
+            toastEl.style.backgroundColor = cor;
+
+            requestAnimationFrame(() => {
+                toastEl.classList.add('visible');
+            });
+
+            setTimeout(() => {
+                toastEl.classList.remove('visible');
+                setTimeout(() => toastEl.remove(), 300);
+            }, duracao);
+        }
+
+        window.FEComponenteToast = {
+            exibir: function (opcoes) {
+                const { texto, cor, duracao } = normalizarOpcoesToast(opcoes);
+
+                const container = obterOuCriarContainer();
+                const toastEl = document.createElement('div');
+                toastEl.className = 'app-toast-item';
+                toastEl.innerHTML = getToastItemHTML(texto);
+
+                container.appendChild(toastEl);
+                animarECiclarToast(toastEl, cor, duracao);
             }
         };
+
+        // 4. LÓGICAS DE REGRA DE NEGÓCIO (Tratamento de Parâmetros e Fallbacks)
+        function normalizarOpcoesToast(opcoes = {}) {
+            return {
+                texto: opcoes.texto || '',
+                cor: opcoes.cor || '#323232',
+                duracao: typeof opcoes.duracao === 'number' ? opcoes.duracao : 3000
+            };
+        }
     })();
 </script>

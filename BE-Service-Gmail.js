@@ -3,11 +3,6 @@ class GmailService {
         this.respostaService = new RespostaService();
     }
 
-    /**
-     * Busca a thread do Gmail pelo identificador do Ticket presente no assunto.
-     * @param {string} ticket 
-     * @returns {GmailThread|null}
-     */
     buscarThreadPorTicket(ticket) {
         if (!ticket) return null;
         const query = `subject:"[${ticket}]"`;
@@ -15,11 +10,6 @@ class GmailService {
         return threads.length > 0 ? threads[0] : null;
     }
 
-    /**
-     * Verifica se já existe um rascunho criado para o ticket ou na thread correspondente.
-     * @param {string} ticket 
-     * @returns {EmailDraft|null}
-     */
     obterRascunhoPorTicket(ticket) {
         if (!ticket) return null;
 
@@ -60,7 +50,6 @@ class GmailService {
      * @returns {EmailDraft}
      */
     criarRascunhoParaTicket({ ticket, to, cc = '', corpoText = '', corpoHtml = '', mensagemTexto = '', mensagemHtml = '' }) {
-        // 1. Validações de entrada
         if (!ticket) {
             throw new Error('O parâmetro "ticket" é obrigatório.');
         }
@@ -68,7 +57,6 @@ class GmailService {
             throw new Error('O e-mail do destinatário ("to") deve ser informado.');
         }
 
-        // 2. Busca de dados obrigatórios da resposta na planilha
         const resposta = this.respostaService.obterRespostaPorTicket(ticket);
         if (!resposta) {
             throw new Error(`Não foi possível localizar os dados do ticket "${ticket}" no sistema.`);
@@ -79,7 +67,6 @@ class GmailService {
         const textoFinal = corpoText || mensagemTexto || '';
         const htmlFinal = corpoHtml || mensagemHtml || '';
 
-        // 3. Montagem do assunto e verificação de thread no Gmail
         const assunto = EmailDraft.gerarAssuntoPadrao({ idProva, questaoNum, ticket });
         const thread = this.buscarThreadPorTicket(ticket);
 

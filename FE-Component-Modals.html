@@ -1,17 +1,10 @@
-<!--
- =============================================================================
- COMPONENTE BASE: Modais (Estilos Gerais e Método de Renderização Base)
- =============================================================================
--->
-
 <script>
   (function () {
-    // -------------------------------------------------------------------------
-    // 1. ESTILOS ISOLADOS (Sem CSS Inline)
-    // -------------------------------------------------------------------------
-    if (!document.getElementById('style-app-modals')) {
+    // 1. ESTILIZAÇÕES (CSS Externo Injetado)
+    const styleId = 'style-app-modals';
+    if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
-      style.id = 'style-app-modals';
+      style.id = styleId;
       style.textContent = `
         .app-modal-backdrop { 
           position: fixed; 
@@ -116,15 +109,27 @@
       document.head.appendChild(style);
     }
 
+    // 2. ESTRUTURA TEMPLATE / HTML
+    function getModalBaseHTML(title, bodyHtml, footerBtnsHtml) {
+      return `
+        <div class="app-modal-card">
+          <div class="app-modal-header">
+            <span>${title}</span>
+            <button type="button" class="app-modal-close" id="app-modal-close-btn">✕</button>
+          </div>
+          <div class="app-modal-body">${bodyHtml}</div>
+          <div class="app-modal-footer">${footerBtnsHtml}</div>
+        </div>
+      `;
+    }
+
+    // 3. LÓGICAS EXCLUSIVAS DE INTERFACE (Renderização e Gerenciamento de Modal)
     window.ModalServices = window.ModalServices || {};
 
     window.ModalServices.fechar = function () {
       document.getElementById('app-active-modal')?.remove();
     };
 
-    // -------------------------------------------------------------------------
-    // 2. BASE RENDERIZADORA DO MODAL
-    // -------------------------------------------------------------------------
     window.ModalServices.renderModalBase = function ({ title, bodyHtml, buttons = [] }) {
       window.ModalServices.fechar();
 
@@ -132,29 +137,26 @@
       backdrop.id = 'app-active-modal';
       backdrop.className = 'app-modal-backdrop';
 
-      const footerBtnsHtml = buttons.map(btn =>
-        window.AppButton ? window.AppButton.render({ label: btn.label, variant: btn.variant, onClickHandler: btn.onClick })
-          : `<button type="button" class="app-btn">${btn.label}</button>`
-      ).join('');
-
-      backdrop.innerHTML = `
-              <div class="app-modal-card">
-                <div class="app-modal-header">
-                  <span>${title}</span>
-                  <button type="button" class="app-modal-close" id="app-modal-close-btn">✕</button>
-                </div>
-                <div class="app-modal-body">${bodyHtml}</div>
-                <div class="app-modal-footer">${footerBtnsHtml}</div>
-              </div>
-            `;
+      const footerBtnsHtml = renderizarBotoesFooter(buttons);
+      backdrop.innerHTML = getModalBaseHTML(title, bodyHtml, footerBtnsHtml);
 
       document.body.appendChild(backdrop);
 
       const fechar = () => window.ModalServices.fechar();
-      document.getElementById('app-modal-close-btn').onclick = fechar;
+      const closeBtn = document.getElementById('app-modal-close-btn');
+      if (closeBtn) closeBtn.onclick = fechar;
       backdrop.onclick = (e) => e.target === backdrop && fechar();
 
       return { fechar };
     };
+
+    // 4. LÓGICAS DE REGRA DE NEGÓCIO (Renderização de Botões)
+    function renderizarBotoesFooter(buttons = []) {
+      return buttons.map(btn =>
+        window.AppButton
+          ? window.AppButton.render({ label: btn.label, variant: btn.variant, onClickHandler: btn.onClick })
+          : `<button type="button" class="app-btn">${btn.label}</button>`
+      ).join('');
+    }
   })();
 </script>

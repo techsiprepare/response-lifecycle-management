@@ -1,28 +1,6 @@
-<!--
-  =============================================================================
-  COMPONENTE: RespostaDetail (Aside Overlay / Drawer)
-  =============================================================================
-  RESPONSABILIDADE:
-    Painel lateral estilo Gaveta (Drawer/Off-canvas) que sobrepõe a aplicação
-    ao clicar em um ticket. Exibe os detalhes base e seções dinâmicas.
-
-  COMPORTAMENTO:
-    - Overlay Backdrop: Aplica fundo escuro suave cobrindo 100vh da tela.
-    - Animação: Desliza suavemente da direita para a esquerda (TranslateX).
-    - Altura e Scroll: Ocupa 100vh com scroll interno isolado na área de conteúdo.
-    - Reativo: Fecha ao clicar fora (no backdrop), na tecla ESC ou no botão fechar.
-
-  MODO DE USO:
-    const elementoDetail = window.RespostaDetail();
-    document.getElementById('app').appendChild(elementoDetail);
-  =============================================================================
--->
-
 <script>
   (function () {
-    // -------------------------------------------------------------------------
-    // 1. ESTILOS (CSS Isolado com Animação e Overlay)
-    // -------------------------------------------------------------------------
+    // 1. ESTILIZAÇÕES (CSS Externo Injetado)
     const styleId = 'style-resposta-detail';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
@@ -137,9 +115,7 @@
       document.head.appendChild(style);
     }
 
-    // -------------------------------------------------------------------------
-    // 2. ESTRUTURA HTML (Templates Visuais)
-    // -------------------------------------------------------------------------
+    // 2. ESTRUTURA TEMPLATE / HTML
     function getDetailHTML(item) {
       if (!item) return '';
 
@@ -153,70 +129,85 @@
       const responsavel = item.responsavel || 'Não atribuído';
       const nomeAluno = item.nomeCompleto || 'Aluno não informado';
 
+      const btnFecharHtml = window.AppButton.render({
+        label: '✕',
+        variant: 'app-btn-close',
+        title: 'Fechar (ESC)',
+        onClickHandler: () => window.RespostaDetail.fechar()
+      });
+
       return `
-            <aside class="detail-aside" onclick="event.stopPropagation()">
-              <div class="detail-header">
-                <div class="detail-title-group">
-                  <span class="detail-ticket-badge">${item.ticket}</span>
-                </div>
-                <button class="detail-close-btn" onclick="window.RespostaDetail.fechar()" title="Fechar (ESC)">✕</button>
+        <aside class="detail-aside" onclick="event.stopPropagation()">
+          <div class="detail-header">
+            <div class="detail-title-group">
+              <span class="detail-ticket-badge">${item.ticket}</span>
+            </div>
+            ${btnFecharHtml}
+          </div>
+
+          <div class="detail-body">
+            <div class="detail-info-grid">
+              
+              <div class="info-group">
+                <span class="info-label">Aluno</span>
+                <span class="info-value">${nomeAluno}</span>
               </div>
 
-              <div class="detail-body">
-                <div class="detail-info-grid">
-                  
-                  <div class="info-group">
-                    <span class="info-label">Aluno</span>
-                    <span class="info-value">${nomeAluno}</span>
-                  </div>
-
-                  <div class="info-group">
-                    <span class="info-label">Questão</span>
-                    <span class="info-value">${questao} - ${tipoQuestao}</span>
-                  </div>
-
-                  <div class="info-group">
-                    <span class="info-label">Prova</span>
-                    <span class="info-value">${prova}</span>
-                  </div>
-
-                  <div class="info-group">
-                    <span class="info-label">Responsável</span>
-                    <span class="info-value">${responsavel}</span>
-                  </div>
-
-                  <div class="info-group">
-                    <span class="info-label">Data e Hora</span>
-                    <span class="info-value">${dataHora}</span>
-                  </div>
-
-                  <div class="info-group">
-                    <span class="info-label">Assunto</span>
-                    <span class="info-value">${assunto}</span>
-                  </div>
-
-                  <div class="info-group">
-                    <span class="info-label">Pré-Curadoria</span>
-                    <span class="info-value">${preCuradoria}</span>
-                  </div>
-
-                  <div class="info-group">
-                    <span class="info-label">Observações</span>
-                    <span class="info-value">${motivo}</span>
-                  </div>                  
-                </div>
-
-                <div class="detail-status-section" id="detail-tab-content">
-                  ${window.RespostaDetailSection.render(item)}
-                </div>
+              <div class="info-group">
+                <span class="info-label">Questão</span>
+                <span class="info-value">${questao} - ${tipoQuestao}</span>
               </div>
-            </aside>
-          `;
+
+              <div class="info-group">
+                <span class="info-label">Prova</span>
+                <span class="info-value">${prova}</span>
+              </div>
+
+              <div class="info-group">
+                <span class="info-label">Responsável</span>
+                <span class="info-value">${responsavel}</span>
+              </div>
+
+              <div class="info-group">
+                <span class="info-label">Data e Hora</span>
+                <span class="info-value">${dataHora}</span>
+              </div>
+
+              <div class="info-group">
+                <span class="info-label">Assunto</span>
+                <span class="info-value">${assunto}</span>
+              </div>
+
+              <div class="info-group">
+                <span class="info-label">Pré-Curadoria</span>
+                <span class="info-value">${preCuradoria}</span>
+              </div>
+
+              <div class="info-group">
+                <span class="info-label">Observações</span>
+                <span class="info-value">${motivo}</span>
+              </div>                  
+            </div>
+
+            <div class="detail-status-section" id="detail-tab-content">
+              ${window.RespostaDetailSection.render(item)}
+            </div>
+          </div>
+        </aside>
+      `;
     }
 
-    // -------------------------------------------------------------------------
-    // 3. SCRIPT E INTERAÇÕES (Lógica de Overlay e Eventos)
-    // -------------------------------------------------------------------------
+    function getProcessingOverlayHTML() {
+      return `
+        <div class="detail-processing-overlay">
+          <span class="detail-processing-icon">⏳</span>
+          <span class="detail-processing-text">Alguém está alterando esse ticket no momento</span>
+          <span class="detail-processing-sub">O painel será atualizado automaticamente.</span>
+        </div>
+      `;
+    }
+
+    // 3. LÓGICAS EXCLUSIVAS DE INTERFACE (Overlay, Eventos e Reatividade)
     window.RespostaDetail = function () {
       const backdrop = document.createElement('div');
       backdrop.className = 'detail-backdrop hidden';
@@ -228,9 +219,7 @@
       function render(state) {
         const ticketSelecionado = state?.ticketSelecionado;
         const respostas = state?.respostas || [];
-        const emProcessamento = (state?.ticketsEmProcessamento || []).some(
-          (t) => String(t) === String(ticketSelecionado)
-        );
+        const emProcessamento = verificarProcessamentoTicket(ticketSelecionado, state?.ticketsEmProcessamento);
 
         if (!ticketSelecionado) {
           backdrop.classList.add('hidden');
@@ -240,7 +229,7 @@
           return;
         }
 
-        const item = respostas.find(r => r.ticket === ticketSelecionado);
+        const item = buscarRespostaPorTicket(respostas, ticketSelecionado);
 
         if (!item) {
           backdrop.classList.add('hidden');
@@ -249,16 +238,9 @@
 
         backdrop.innerHTML = getDetailHTML(item);
 
-        // Sobrepõe o aside com overlay de bloqueio se o ticket estiver sendo editado
         if (emProcessamento) {
           const aside = backdrop.querySelector('.detail-aside');
-          aside.insertAdjacentHTML('afterbegin', `
-            <div class="detail-processing-overlay">
-              <span class="detail-processing-icon">⏳</span>
-              <span class="detail-processing-text">Alguém está alterando esse ticket no momento</span>
-              <span class="detail-processing-sub">O painel será atualizado automaticamente.</span>
-            </div>
-          `);
+          aside.insertAdjacentHTML('afterbegin', getProcessingOverlayHTML());
         }
 
         requestAnimationFrame(() => {
@@ -281,5 +263,17 @@
     window.RespostaDetail.fechar = function () {
       window.AppStore.setState({ ticketSelecionado: null });
     };
+
+    // 4. LÓGICAS DE REGRA DE NEGÓCIO (Processamento de Dados e Buscas)
+    function verificarProcessamentoTicket(ticketSelecionado, ticketsEmProcessamento = []) {
+      if (!ticketSelecionado) return false;
+      return ticketsEmProcessamento.some(
+        (t) => String(t) === String(ticketSelecionado)
+      );
+    }
+
+    function buscarRespostaPorTicket(respostas = [], ticketSelecionado) {
+      return respostas.find(r => r.ticket === ticketSelecionado);
+    }
   })();
 </script>

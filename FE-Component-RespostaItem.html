@@ -1,27 +1,6 @@
-<!--
-  =============================================================================
-  COMPONENTE: RespostaItem
-  =============================================================================
-  RESPONSABILIDADE:
-    Renderizar uma linha individual (item) correspondente a um atendimento na 
-    grid da tabela, exibindo: Status, Ticket, Aluno, Prova/Questão e Responsável.
-
-  COMPORTAMENTO:
-    - Renderiza uma string HTML com classe `ticket-row` ajustada ao subgrid do container.
-    - Aplica estilização e cores automatizadas ao badge de acordo com o status.
-    - Clicável: Captura o evento de clique na linha do ticket e dispara manipulador de evento.
-
-  MODO DE USO:
-    const htmlItem = window.RespostaItem(objetoResposta);
-    // Deve ser inserido dentro do container .ticket-table
-  =============================================================================
--->
-
 <script>
   (function () {
-    // -------------------------------------------------------------------------
-    // 1. ESTILOS (CSS Isolado com Cores por Status)
-    // -------------------------------------------------------------------------
+    // 1. ESTILIZAÇÕES (CSS Externo Injetado)
     const styleId = 'style-resposta-item';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
@@ -52,34 +31,11 @@
       document.head.appendChild(style);
     }
 
-    // -------------------------------------------------------------------------
-    // 2. MAPEAMENTO AUTOMATIZADO DE STATUS PARA CLASSES CSS
-    // -------------------------------------------------------------------------
-    const STATUS_CLASS_MAP = Object.freeze({
-      'Novo': 'badge-novo',
-      'Em análise': 'badge-em-analise',
-      'Pronto p/ Análise': 'badge-pronto-analise',
-      'Pronto p/ Reanálise': 'badge-pronto-reanalise',
-      'Devolvido para ajustes': 'badge-devolvido',
-      'Aprovado': 'badge-aprovado',
-      'Rejeitado': 'badge-rejeitado',
-      'Não Publicado': 'badge-nao-publicado'
-    });
-
-    function getStatusClass(status) {
-      return STATUS_CLASS_MAP[status] || 'badge-default';
-    }
-
-    // -------------------------------------------------------------------------
-    // 3. ESTRUTURA HTML (Templates Visuais)
-    // -------------------------------------------------------------------------
+    // 2. ESTRUTURA TEMPLATE / HTML
     window.RespostaItem = function (resposta) {
       const statusText = resposta.status || 'Pendente';
       const statusClass = getStatusClass(resposta.status);
-
-      const provaQuestao = [resposta.idProva, resposta.questaoNum ? `Q${resposta.questaoNum}` : '']
-        .filter(Boolean)
-        .join(' - ') || '-';
+      const provaQuestao = formatarProvaQuestao(resposta.idProva, resposta.questaoNum);
 
       return `
         <div class="ticket-row" id="item-${resposta.ticket}" onclick="window.RespostaItem.handleClick('${resposta.ticket}')">
@@ -96,11 +52,31 @@
       `;
     };
 
-    // -------------------------------------------------------------------------
-    // 4. SCRIPT E INTERAÇÕES (Lógica de Eventos)
-    // -------------------------------------------------------------------------
+    // 3. LÓGICAS EXCLUSIVAS DE INTERFACE (Handlers de Eventos de UI)
     window.RespostaItem.handleClick = function (ticket) {
       window.AppStore.setState({ ticketSelecionado: ticket });
     };
+
+    // 4. LÓGICAS DE REGRA DE NEGÓCIO (Mapeamentos e Formatação de Dados)
+    const STATUS_CLASS_MAP = Object.freeze({
+      'Novo': 'badge-novo',
+      'Em análise': 'badge-em-analise',
+      'Pronto p/ Análise': 'badge-pronto-analise',
+      'Pronto p/ Reanálise': 'badge-pronto-reanalise',
+      'Devolvido para ajustes': 'badge-devolvido',
+      'Aprovado': 'badge-aprovado',
+      'Rejeitado': 'badge-rejeitado',
+      'Não Publicado': 'badge-nao-publicado'
+    });
+
+    function getStatusClass(status) {
+      return STATUS_CLASS_MAP[status] || 'badge-default';
+    }
+
+    function formatarProvaQuestao(idProva, questaoNum) {
+      return [idProva, questaoNum ? `Q${questaoNum}` : '']
+        .filter(Boolean)
+        .join(' - ') || '-';
+    }
   })();
 </script>

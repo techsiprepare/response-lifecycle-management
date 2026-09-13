@@ -1,27 +1,6 @@
-<!--
-  =============================================================================
-  COMPONENTE: RespostaList
-  =============================================================================
-  RESPONSABILIDADE:
-    Container principal da tabela de atendimentos/respostas. Gerencia a
-    renderização da estrutura da grid, do cabeçalho fixo das colunas e
-    alterna dinamicamente entre os estados de Carregamento, Vazio e Tabela.
-
-  COMPORTAMENTO:
-    - Reativo: Inscreve-se na `window.AppStore` e atualiza a interface a cada mudança de estado.
-    - Composição: Instancia e encadeia múltiplos `RespostaItem` dentro da grid.
-
-  MODO DE USO:
-    const elementoLista = window.RespostaList();
-    document.getElementById('container').appendChild(elementoLista);
-  =============================================================================
--->
-
 <script>
   (function () {
-    // -------------------------------------------------------------------------
-    // 1. ESTILOS (CSS Isolado)
-    // -------------------------------------------------------------------------
+    // 1. ESTILIZAÇÕES (CSS Externo Injetado)
     const styleId = 'style-resposta-list';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
@@ -38,9 +17,7 @@
       document.head.appendChild(style);
     }
 
-    // -------------------------------------------------------------------------
-    // 2. ESTRUTURA HTML (Templates Visuais)
-    // -------------------------------------------------------------------------
+    // 2. ESTRUTURA TEMPLATE / HTML
     function getLoadingHTML() {
       return `
         <div class="loading-overlay">
@@ -67,25 +44,18 @@
         </div>`;
     }
 
-    // -------------------------------------------------------------------------
-    // 3. SCRIPT E INTERAÇÕES (Lógica de Inicialização e Reatividade)
-    // -------------------------------------------------------------------------
+    // 3. LÓGICAS EXCLUSIVAS DE INTERFACE (Renderização e Reatividade)
     window.RespostaList = function () {
       const container = document.createElement('div');
       container.className = 'table-container';
 
       function render(state) {
-        let respostas = state?.respostas || [];
-        const filtro = state?.filtro || '';
-
         if (state?.loading) {
           container.innerHTML = getLoadingHTML();
           return;
         }
 
-        if (filtro) {
-          respostas = respostas.filter(r => r.status === filtro);
-        }
+        const respostas = filtrarRespostas(state?.respostas, state?.filtro);
 
         if (!respostas.length) {
           container.innerHTML = getEmptyHTML();
@@ -100,5 +70,13 @@
 
       return container;
     };
+
+    // 4. LÓGICAS DE REGRA DE NEGÓCIO (Filtragem e Processamento de Dados)
+    function filtrarRespostas(respostas = [], filtro = '') {
+      if (!filtro) {
+        return respostas;
+      }
+      return respostas.filter(r => r.status === filtro);
+    }
   })();
 </script>

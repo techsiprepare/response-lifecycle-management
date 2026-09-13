@@ -1,23 +1,10 @@
-<!--
- =============================================================================
- COMPONENTE/SERVIÇO: Modal de Listagem de Links
- =============================================================================
- RESPONSABILIDADE:
-   Expõe dois métodos no namespace ModalServices para exibir listas
-   cronológicas de links relacionados a uma resposta.
- =============================================================================
--->
-
 <script>
     (function () {
-        window.ModalServices = window.ModalServices || {};
-
-        // -------------------------------------------------------------------------
-        // 1. ESTILOS OTIMIZADOS
-        // -------------------------------------------------------------------------
-        if (!document.getElementById('style-modal-listagem-links')) {
+        // 1. ESTILIZAÇÕES (CSS Externo Injetado)
+        const styleId = 'style-modal-listagem-links';
+        if (!document.getElementById(styleId)) {
             const style = document.createElement('style');
-            style.id = 'style-modal-listagem-links';
+            style.id = styleId;
             style.textContent = `
                 .link-list { display: flex; flex-direction: column; gap: 8px; }
                 
@@ -41,42 +28,36 @@
                 .link-time { font-size: 0.75rem; color: #a0aec0; white-space: nowrap; }
                 .link-list-empty { font-size: 0.85rem; color: #a0aec0; font-style: italic; text-align: center; padding: 12px 0; }
                 
-                .link-desc { 
-                    font-size: 0.8rem; color: #718096; 
-                }
+                .link-desc { font-size: 0.8rem; color: #718096; }
 
                 #app-active-modal .app-modal-card { max-width: 450px; }
             `;
             document.head.appendChild(style);
         }
 
-        // -------------------------------------------------------------------------
-        // 2. HELPERS INTERNOS
-        // -------------------------------------------------------------------------
-        function _renderLinkItem({ url, dataHora, badgeLabel, badgeClass, descricao }) {
+        // 2. ESTRUTURA TEMPLATE / HTML
+        function getLinkItemHTML({ url, dataHora, badgeLabel, badgeClass, descricao }) {
             let safeUrl = url;
-
             if (!/^https?:\/\//i.test(safeUrl)) {
                 safeUrl = 'https://' + safeUrl;
             }
 
             return `
                 <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" onclick="window.open('${safeUrl}', '_blank'); return false;" class="link-item">
-                    <div class="link-header">
-                        <span class="link-badge ${badgeClass}">${badgeLabel}</span>
-                        <span class="link-time">${dataHora || '-'}</span>
-                    </div>
-                    ${descricao ? `<div class="link-desc">${descricao}</div>` : ''}
+                <div class="link-header">
+                    <span class="link-badge ${badgeClass}">${badgeLabel}</span>
+                    <span class="link-time">${dataHora || '-'}</span>
+                </div>
+                ${descricao ? `<div class="link-desc">${descricao}</div>` : ''}
                 </a>
             `;
         }
 
-        function _buildLinkListHtml(resposta, campoOriginal, campoReenvio) {
+        function getLinkListHTML(resposta, campoOriginal, campoReenvio) {
             const itens = [];
 
-            // Adiciona o original apenas se houver link preenchido
             if (resposta[campoOriginal]) {
-                itens.push(_renderLinkItem({
+                itens.push(getLinkItemHTML({
                     url: resposta[campoOriginal],
                     dataHora: resposta.dataHora,
                     badgeLabel: 'Original',
@@ -84,10 +65,9 @@
                 }));
             }
 
-            // Adiciona os reenvios apenas se houver link preenchido
             (resposta.reenvios || []).forEach((reenvio, i) => {
                 if (reenvio[campoReenvio]) {
-                    itens.push(_renderLinkItem({
+                    itens.push(getLinkItemHTML({
                         url: reenvio[campoReenvio],
                         dataHora: reenvio.carimboDataHora,
                         badgeLabel: `Reenvio ${i + 1}`,
@@ -104,27 +84,29 @@
             return `<div class="link-list">${itens.join('')}</div>`;
         }
 
-        function _abrirModalListagem(resposta, titulo, campoOriginal, campoReenvio) {
+        // 3. LÓGICAS EXCLUSIVAS DE INTERFACE (Abertura dos Modais)
+        window.ModalServices = window.ModalServices || {};
+
+        window.ModalServices.abrirModalVideo = function (resposta) {
+            abrirModalListagem(resposta, 'Vídeos', 'urlVideoOriginal', 'urlAtualizada');
+        };
+
+        window.ModalServices.abrirModalVerAutorizacao = function (resposta) {
+            abrirModalListagem(resposta, 'Autorizações', 'autorizacao', 'autorizacaoAtualizada');
+        };
+
+        // 4. LÓGICAS DE REGRA DE NEGÓCIO (Processamento e Invocações Internas)
+        function abrirModalListagem(resposta, titulo, campoOriginal, campoReenvio) {
             if (!window.ModalServices.renderModalBase) return console.error('FE-Component-Modals.html ausente.');
             if (!resposta) return console.error('Parâmetro "resposta" é obrigatório.');
 
             const modal = window.ModalServices.renderModalBase({
-                title: `${titulo}`,
-                bodyHtml: _buildLinkListHtml(resposta, campoOriginal, campoReenvio),
+                title: titulo,
+                bodyHtml: getLinkListHTML(resposta, campoOriginal, campoReenvio),
                 buttons: [
                     { label: 'Fechar', variant: 'app-btn-light', onClick: () => modal.fechar() }
                 ]
             });
         }
-
-        // -------------------------------------------------------------------------
-        // 3. MÉTODOS EXPORTADOS
-        // -------------------------------------------------------------------------
-        window.ModalServices.abrirModalVideo = (resposta) =>
-            _abrirModalListagem(resposta, 'Vídeos', 'urlVideoOriginal', 'urlAtualizada');
-
-        window.ModalServices.abrirModalVerAutorizacao = (resposta) =>
-            _abrirModalListagem(resposta, 'Autorizações', 'autorizacao', 'autorizacaoAtualizada');
-
     })();
 </script>
