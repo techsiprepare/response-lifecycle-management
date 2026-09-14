@@ -1,7 +1,6 @@
 class BaseSpreadsheetRepository {
     constructor() {
-        const props = PropertiesService.getScriptProperties();
-        this.spreadsheetId = props.getProperty('SPREADSHEET_ID');
+        this.spreadsheetId = obterSpreadsheetId();
         if (!this.spreadsheetId) throw new Error('SPREADSHEET_ID não configurado.');
     }
 

@@ -21,11 +21,6 @@ function salvarRespostaENotificar(dadosResposta, sessionId) {
   return respostaService.salvarRespostaENotificar(dadosResposta, sessionId);
 }
 
-function obterConfiguracaoPublicaFirebase() {
-  return {
-    dbUrl: PropertiesService.getScriptProperties().getProperty('FIREBASE_DB_URL')
-  };
-}
 
 function obterRespostaPorTicket(ticket) {
   const respostaService = new RespostaService();
@@ -37,8 +32,4 @@ function obterProvas() {
   const provas = provaService.obterProvasComQuestoes();
 
   return JSON.parse(JSON.stringify(provas));
-}
-
-function obterUrlFormReenvio() {
-  return PropertiesService.getScriptProperties().getProperty('FORM_REENVIO_URL') || '';
-}
+}

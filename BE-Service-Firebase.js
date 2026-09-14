@@ -1,8 +1,8 @@
 class FirebaseNotifier {
   constructor() {
-    const props = PropertiesService.getScriptProperties();
-    this.dbUrl = props.getProperty('FIREBASE_DB_URL');
-    this.secret = props.getProperty('FIREBASE_SECRET');
+    const config = obterConfiguracaoFirebase();
+    this.dbUrl = config.dbUrl;
+    this.secret = config.secret;
   }
 
   notificar(resposta, sessionId, status = 'sucesso') {
