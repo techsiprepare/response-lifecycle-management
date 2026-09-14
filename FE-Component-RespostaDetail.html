@@ -61,7 +61,7 @@
           flex-shrink: 0;
         }
 
-        .detail-title-group { display: flex; flex-direction: column; gap: 4px; }
+        .detail-title-group { display: flex; flex-direction: row; gap: 4px; }
         .detail-ticket-badge { font-size: 0.8rem; font-weight: 700; color: #4e4e4e; background-color: #edf2f7; padding: 2px 8px; border-radius: 6px; width: fit-content; }
         .detail-close-btn { background: transparent; border: none; font-size: 1.25rem; color: #a0aec0; cursor: pointer; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s; }
         .detail-close-btn:hover { background-color: #edf2f7; color: #4a5568; }
@@ -150,7 +150,11 @@
 
           <div class="detail-body">
             <div class="detail-info-grid">
-              
+              <div class="info-group">
+                <span class="info-label">Status</span>
+                <span class="info-value">${item.status}</span>
+              </div>
+
               <div class="info-group">
                 <span class="info-label">Aluno</span>
                 <span class="info-value">${nomeAluno}</span>
