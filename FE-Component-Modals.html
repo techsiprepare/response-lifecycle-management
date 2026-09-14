@@ -110,12 +110,12 @@
     }
 
     // 2. ESTRUTURA TEMPLATE / HTML
-    function getModalBaseHTML(title, bodyHtml, footerBtnsHtml) {
+    function getModalBaseHTML(title, bodyHtml, footerBtnsHtml, closeBtnHtml) {
       return `
         <div class="app-modal-card">
           <div class="app-modal-header">
             <span>${title}</span>
-            <button type="button" class="app-modal-close" id="app-modal-close-btn">✕</button>
+            ${closeBtnHtml}
           </div>
           <div class="app-modal-body">${bodyHtml}</div>
           <div class="app-modal-footer">${footerBtnsHtml}</div>
@@ -137,14 +137,23 @@
       backdrop.id = 'app-active-modal';
       backdrop.className = 'app-modal-backdrop';
 
+      const closeBtnHtml = window.AppButton
+        ? window.AppButton.render({
+          label: '✕',
+          variant: 'app-btn-close',
+          title: 'Fechar',
+          onClickHandler: () => window.ModalServices.fechar()
+        })
+        : `<button type="button" class="app-modal-close" id="app-modal-close-btn">✕</button>`;
+
       const footerBtnsHtml = renderizarBotoesFooter(buttons);
-      backdrop.innerHTML = getModalBaseHTML(title, bodyHtml, footerBtnsHtml);
+      backdrop.innerHTML = getModalBaseHTML(title, bodyHtml, footerBtnsHtml, closeBtnHtml);
 
       document.body.appendChild(backdrop);
 
       const fechar = () => window.ModalServices.fechar();
-      const closeBtn = document.getElementById('app-modal-close-btn');
-      if (closeBtn) closeBtn.onclick = fechar;
+
+      // Fallback para fechar ao clicar no backdrop escuro
       backdrop.onclick = (e) => e.target === backdrop && fechar();
 
       return { fechar };

@@ -7,17 +7,17 @@
             style.id = styleId;
             style.textContent = `
                 .status-section-container {
-                  display: flex;
-                  flex-direction: column;
-                  gap: 16px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
                 }
 
-                  .status-actions-group {
+                .status-actions-group {
                     display: flex;
                     gap: 8px;
                     flex-wrap: wrap;
                     margin-top: 8px;
-                  }
+                }
 
                 .status-actions-group .info-label {
                     font-size: 0.72rem;
@@ -44,20 +44,20 @@
                 .join('');
 
             return `
-              <div class="status-actions-group">
-                <span class="info-label">${label}</span>
-                ${buttonsHtml}
-              </div>
+                <div class="status-actions-group">
+                    <span class="info-label">${label}</span>
+                    ${buttonsHtml}
+                </div>
             `;
         }
 
         function getSectionContainerHTML(conteudoHtml, comunicacaoHtml, fluxoHtml) {
             return `
-              <div class="status-section-container">
-                  ${conteudoHtml}
-                  ${comunicacaoHtml}
-                  ${fluxoHtml}
-              </div>
+                <div class="status-section-container">
+                    ${conteudoHtml}
+                    ${comunicacaoHtml}
+                    ${fluxoHtml}
+                </div>
             `;
         }
 
