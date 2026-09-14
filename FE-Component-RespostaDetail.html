@@ -82,6 +82,40 @@
         .info-value { font-size: 0.9rem; font-weight: 500; color: #2c3e50; word-break: break-word; }
         .detail-status-section { border-top: 1px dashed #e1e8ed; padding-top: 16px; margin-top: 8px; }
 
+        /* Banner de alerta para tickets duplicados */
+        .detail-duplicados-banner {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 14px;
+          background: #fffbeb;
+          border: 1px solid #fde68a;
+          border-radius: 8px;
+          font-size: 0.82rem;
+          color: #92400e;
+          line-height: 1.4;
+        }
+        .detail-duplicados-banner-text {
+          flex: 1;
+          font-weight: 500;
+        }
+        .detail-duplicados-banner-btn {
+          flex-shrink: 0;
+          padding: 5px 12px;
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: #92400e;
+          background: #fef3c7;
+          border: 1px solid #fde68a;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background 0.2s ease;
+          white-space: nowrap;
+        }
+        .detail-duplicados-banner-btn:hover {
+          background: #fde68a;
+        }
+
         /* Overlay de bloqueio - exibido quando outro usuário está editando o ticket */
         .detail-processing-overlay {
           position: absolute;
@@ -116,7 +150,7 @@
     }
 
     // 2. ESTRUTURA TEMPLATE / HTML
-    function getDetailHTML(item) {
+    function getDetailHTML(item, respostas) {
       if (!item) return '';
 
       const questao = item.questaoNum ? `Questão ${item.questaoNum}` : '-';
@@ -149,6 +183,7 @@
           </div>
 
           <div class="detail-body">
+            ${getDuplicadosBannerHTML(item, respostas)}
             <div class="detail-info-grid">
               <div class="info-group">
                 <span class="info-label">Status</span>
@@ -248,7 +283,7 @@
           return;
         }
 
-        backdrop.innerHTML = getDetailHTML(item);
+        backdrop.innerHTML = getDetailHTML(item, respostas);
 
         if (emProcessamento) {
           const aside = backdrop.querySelector('.detail-aside');
@@ -286,6 +321,77 @@
 
     function buscarRespostaPorTicket(respostas = [], ticketSelecionado) {
       return respostas.find(r => r.ticket === ticketSelecionado);
+    }
+
+    function buscarTicketsDuplicados(itemAtual, respostas = []) {
+      if (!itemAtual?.questaoNum || !itemAtual?.tipo || !itemAtual?.idProva) return [];
+
+      const dataAtual = parseDateString(itemAtual.dataHora || itemAtual.dataCriacao);
+
+      return respostas
+        .filter(r => {
+          if (r.ticket === itemAtual.ticket) return false;
+          if (String(r.questaoNum) !== String(itemAtual.questaoNum)) return false;
+          if (String(r.tipo) !== String(itemAtual.tipo)) return false;
+          if (String(r.idProva) !== String(itemAtual.idProva)) return false;
+
+          if (dataAtual) {
+            const dataOutro = parseDateString(r.dataHora || r.dataCriacao);
+            if (dataOutro && dataOutro >= dataAtual) return false;
+          }
+
+          return true;
+        })
+        .sort((a, b) => {
+          const dA = parseDateString(a.dataHora || a.dataCriacao);
+          const dB = parseDateString(b.dataHora || b.dataCriacao);
+          if (!dA || !dB) return 0;
+          return dA - dB;
+        });
+    }
+
+    function parseDateString(str) {
+      if (!str) return null;
+      // Formato pt-BR: "dd/mm/yyyy HH:MM:SS" ou "dd/mm/yyyy, HH:MM:SS"
+      const match = String(str).match(/^(\d{2})\/(\d{2})\/(\d{4})[,\s]+(\d{2}):(\d{2}):(\d{2})$/);
+      if (match) {
+        return new Date(+match[3], +match[2] - 1, +match[1], +match[4], +match[5], +match[6]);
+      }
+      const parsed = new Date(str);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function getDuplicadosBannerHTML(item, respostas) {
+      if (!item?.questaoNum || !item?.tipo || !item?.idProva) return '';
+
+      const duplicatas = buscarTicketsDuplicados(item, respostas);
+
+      if (duplicatas.length === 0) {
+        return `
+          <div class="detail-duplicados-banner" style="background: #f0fdf4; border-color: #bbf7d0; color: #166534;">
+            <span class="detail-duplicados-banner-text">
+              Esse é o primeiro ticket para essa questão/prova.
+            </span>
+          </div>
+        `;
+      }
+
+      const handlerId = 'dup_banner_' + Math.random().toString(36).substring(2, 11);
+      window[handlerId] = function () {
+        if (window.ModalServices?.abrirModalTicketsDuplicados) {
+          window.ModalServices.abrirModalTicketsDuplicados(duplicatas);
+        }
+      };
+
+      const plural = duplicatas.length === 1 ? '' : 's';
+      return `
+        <div class="detail-duplicados-banner">
+          <span class="detail-duplicados-banner-text">
+            Existe${plural === 's' ? 'm' : ''} <strong>${duplicatas.length}</strong> ticket${plural} anterior${plural === 's' ? 'es' : ''} com a mesma questão e prova.
+          </span>
+          <button type="button" class="detail-duplicados-banner-btn" onclick="window['${handlerId}']()">Ver ticket${plural}</button>
+        </div>
+      `;
     }
   })();
 </script>

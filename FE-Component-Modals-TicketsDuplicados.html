@@ -1,0 +1,210 @@
+<script>
+    (function () {
+        // 1. ESTILIZAÇÕES ESPECÍFICAS (CSS Injetado)
+        const styleId = 'style-modal-tickets-duplicados';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+                #app-active-modal .app-modal-card.modal-duplicados-card {
+                    max-width: 620px;
+                }
+
+                .duplicados-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    max-height: 420px;
+                    overflow-y: auto;
+                    padding-right: 4px;
+                }
+
+                .duplicado-card {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 10px;
+                    padding: 16px;
+                    background: #ffffff;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                    transition: box-shadow 0.2s ease;
+                }
+
+                .duplicado-card-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .duplicado-card-header-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                .duplicado-ticket-id {
+                    font-size: 0.9rem;
+                    font-weight: 700;
+                    color: #2d3748;
+                }
+
+                .duplicado-data {
+                    font-size: 0.78rem;
+                    color: #a0aec0;
+                }
+
+                .duplicado-card-body {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                    font-size: 0.85rem;
+                    color: #4a5568;
+                }
+
+                .duplicado-card-body strong {
+                    font-weight: 600;
+                    color: #2d3748;
+                }
+
+                .duplicado-motivo {
+                    color: #e53e3e;
+                    font-weight: 600;
+                    font-style: italic;
+                }
+
+                .duplicado-card-footer {
+                    display: flex;
+                    justify-content: flex-end;
+                    margin-top: 4px;
+                }
+
+                .duplicado-btn-video {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    padding: 6px 14px;
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    color: #475569;
+                    background: #f1f5f9;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    transition: background 0.2s ease;
+                }
+
+                .duplicado-btn-video:hover {
+                    background: #e2e8f0;
+                }
+
+                .duplicado-card.border-rejeitado { border-left-color: #fc8181; }
+                .duplicado-card.border-aprovado { border-left-color: #68d391; }
+                .duplicado-card.border-em-analise { border-left-color: #f6ad55; }
+                .duplicado-card.border-novo { border-left-color: #63b3ed; }
+                .duplicado-card.border-pronto-analise { border-left-color: #63b3ed; }
+                .duplicado-card.border-pronto-reanalise { border-left-color: #b794f4; }
+
+                .duplicados-empty {
+                    font-size: 0.85rem;
+                    color: #a0aec0;
+                    font-style: italic;
+                    text-align: center;
+                    padding: 16px 0;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // 2. ESTRUTURA TEMPLATE / HTML
+        function getDuplicadoCardHTML(item) {
+            const ticket = item.ticket || '-';
+            const dataHora = item.dataHora || item.dataCriacao || '-';
+            const statusText = item.status || 'Pendente';
+            const statusBadgeClass = getStatusBadgeClass(item.status);
+            const nomeAluno = item.nomeCompleto || 'Aluno não informado';
+            const assunto = item.assuntoPrincipal || '-';
+            const responsavel = item.responsavel || 'Não atribuído';
+            const motivo = item.motivo || '';
+
+            const motivoHtml = motivo
+                ? `<div class="duplicado-card-body"><strong style="color: #e53e3e;">Motivo:</strong> <span class="duplicado-motivo">${motivo}</span></div>`
+                : '';
+
+            const handlerIdVideo = 'dup_video_' + Math.random().toString(36).substring(2, 11);
+            window[handlerIdVideo] = function () {
+                if (window.ModalServices.abrirModalVideo) {
+                    window.ModalServices.abrirModalVideo(item);
+                }
+            };
+
+            return `
+                <div class="duplicado-card">
+                    <div class="duplicado-card-header">
+                        <div class="duplicado-card-header-left">
+                            <span class="duplicado-ticket-id">${ticket}</span>
+                            <span class="duplicado-data">${dataHora}</span>
+                        </div>
+                        <span class="badge ${statusBadgeClass}">${statusText}</span>
+                    </div>
+                    <div class="duplicado-card-body">
+                        <div><strong>Aluno:</strong> ${nomeAluno}</div>
+                        <div><strong>Assunto:</strong> ${assunto}</div>
+                        <div><strong>Responsável:</strong> ${responsavel}</div>
+                    </div>
+                    ${motivoHtml}
+                    <div class="duplicado-card-footer">
+                        <button type="button" class="duplicado-btn-video" onclick="window['${handlerIdVideo}']()">Ver Vídeo</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getDuplicadosListHTML(duplicatas) {
+            if (!duplicatas || duplicatas.length === 0) {
+                return `<div class="duplicados-empty">Nenhum ticket duplicado encontrado.</div>`;
+            }
+
+            const cardsHtml = duplicatas.map(item => getDuplicadoCardHTML(item)).join('');
+            return `<div class="duplicados-list">${cardsHtml}</div>`;
+        }
+
+        // 3. LÓGICAS EXCLUSIVAS DE INTERFACE (Abertura do Modal)
+        window.ModalServices = window.ModalServices || {};
+
+        window.ModalServices.abrirModalTicketsDuplicados = function (duplicatas) {
+            if (!window.ModalServices.renderModalBase) {
+                return console.error('FE-Component-Modals.html ausente.');
+            }
+
+            const modal = window.ModalServices.renderModalBase({
+                title: `Tickets Anteriores (${duplicatas.length})`,
+                bodyHtml: getDuplicadosListHTML(duplicatas),
+                buttons: [
+                    { label: 'Fechar', variant: 'app-btn-light', onClick: () => modal.fechar() }
+                ]
+            });
+
+            // Aplica a classe de largura maior ao card do modal
+            const modalCard = document.querySelector('#app-active-modal .app-modal-card');
+            if (modalCard) {
+                modalCard.classList.add('modal-duplicados-card');
+            }
+        };
+
+        // 4. LÓGICAS DE REGRA DE NEGÓCIO (Mapeamento de Status)
+        const STATUS_BADGE_MAP = Object.freeze({
+            'Novo': 'badge-novo',
+            'Em análise': 'badge-em-analise',
+            'Pronto p/ Análise': 'badge-pronto-analise',
+            'Pronto p/ Reanálise': 'badge-pronto-reanalise',
+            'Devolvido para ajustes': 'badge-devolv ido',
+            'Aprovado': 'badge-aprovado',
+            'Rejeitado': 'badge-rejeitado'
+        });
+
+        function getStatusBadgeClass(status) {
+            return STATUS_BADGE_MAP[status] || 'badge-default';
+        }
+    })();
+</script>
