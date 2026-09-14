@@ -38,3 +38,7 @@ function obterProvas() {
 
   return JSON.parse(JSON.stringify(provas));
 }
+
+function obterUrlFormReenvio() {
+  return PropertiesService.getScriptProperties().getProperty('FORM_REENVIO_URL') || '';
+}

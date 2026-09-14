@@ -102,17 +102,17 @@
             enviarBaremaAluno: (item) => ({
                 label: 'Enviar Barema para Aluno',
                 variant: 'app-btn-light',
-                onClick: () => { } // TODO: implementar window.ModalServices.abrirModalEnvioBarema(item)
+                onClick: () => window.ModalServices.abrirModalEnviarBaremaAluno(item)
             }),
             solicitarAvaliacaoProfessor: (item) => ({
                 label: 'Solicitar Avaliação p/ Professor',
                 variant: 'app-btn-light',
-                onClick: () => { } // TODO: implementar window.ModalServices.abrirModalSolicitarAvaliacao(item)
+                onClick: () => window.ModalServices.abrirModalSolicitarAvaliacaoProfessor(item)
             }),
             salvarLinkVideo: (item) => ({
-                label: 'Salvar Link do Vídeo',
+                label: item.urlVideoOficial ? 'Atualizar Link do Vídeo' : 'Salvar Link do Vídeo',
                 variant: 'app-btn-light',
-                onClick: () => { } // TODO: implementar window.ModalServices.abrirModalSalvarVideo(item)
+                onClick: () => window.ModalServices.abrirModalSalvarVideo(item)
             }),
             aprovarTicket: (item) => ({
                 label: 'Aprovar Ticket',
@@ -170,8 +170,7 @@
 
                 return {
                     conteudoButtons: [
-                        createBtnConfig.verVideoAluno(item),
-                        createBtnConfig.verQuestaoSite(item)
+                        createBtnConfig.verVideoAluno(item)
                     ],
                     comunicacaoButtons: [],
                     fluxoButtons: [fluxoBtn]
@@ -185,9 +184,6 @@
                     conteudoButtons: [
                         createBtnConfig.verVideoAluno(item),
                         createBtnConfig.verQuestaoSite(item)
-                    ],
-                    comunicacaoButtons: [
-                        createBtnConfig.abrirGmailBuscarTicket(item)
                     ],
                     fluxoButtons: [
                         createBtnConfig.mudarEmAnalise(item)
@@ -224,7 +220,8 @@
                 return {
                     conteudoButtons: [
                         createBtnConfig.verVideoAluno(item),
-                        createBtnConfig.verQuestaoSite(item)
+                        createBtnConfig.verQuestaoSite(item),
+                        createBtnConfig.verAutorizacao(item)
                     ],
                     comunicacaoButtons: [
                         createBtnConfig.abrirGmailBuscarTicket(item)
@@ -241,7 +238,8 @@
                 return {
                     conteudoButtons: [
                         createBtnConfig.verVideoAluno(item),
-                        createBtnConfig.verQuestaoSite(item)
+                        createBtnConfig.verQuestaoSite(item),
+                        createBtnConfig.verAutorizacao(item)
                     ],
                     comunicacaoButtons: [
                         createBtnConfig.abrirGmailBuscarTicket(item)
@@ -259,6 +257,7 @@
                     conteudoButtons: [
                         createBtnConfig.verVideoAluno(item),
                         createBtnConfig.verQuestaoSite(item),
+                        createBtnConfig.verAutorizacao(item),
                         createBtnConfig.salvarLinkVideo(item)
                     ],
                     comunicacaoButtons: [
@@ -276,7 +275,8 @@
                 return {
                     conteudoButtons: [
                         createBtnConfig.verVideoAluno(item),
-                        createBtnConfig.verQuestaoSite(item)
+                        createBtnConfig.verQuestaoSite(item),
+                        createBtnConfig.verAutorizacao(item)
                     ],
                     comunicacaoButtons: [
                         createBtnConfig.abrirGmailBuscarTicket(item)

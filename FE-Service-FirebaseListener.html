@@ -1,38 +1,10 @@
-<!--
-  =============================================================================
-  SERVIÇO: FirebaseListener
-  =============================================================================
-  RESPONSABILIDADE:
-    Conectar ao Firebase Realtime Database via SSE (Server-Sent Events),
-    interpretar o status de cada evento recebido e despachar a action
-    correspondente no AppStore.
-
-    Este módulo NÃO conhece detalhes de UI, fetch de dados ou regras de
-    negócio - apenas roteia eventos para as actions corretas.
-
-  FLUXO:
-    Firebase SSE → _handleEvento() → switch(status)
-      'processando' → AppStore.marcarTicketEmProcessamento(ticket)
-      'sucesso'     → AppStore.concluirProcessamentoTicket(ticket)
-                      + AppStore._fetchEAtualizarTicket(ticket)
-      'erro'        → AppStore.concluirProcessamentoTicket(ticket)
-                      + toast de erro
-
-  MODO DE USO:
-    // Chamado pelo Index.html após AppStore.init() resolver
-    window.FirebaseListener.init(window.AppStore.horaInicioSessao);
-  =============================================================================
--->
-
 <script>
     (function () {
         window.FirebaseListener = {
             _eventSource: null,
             _horaInicioSessao: null,
 
-            // -------------------------------------------------------------------------
-            // PONTO DE ENTRADA: inicia a conexão SSE buscando a config no backend
-            // -------------------------------------------------------------------------
+            // PONTO DE ENTRADA
             init(horaInicioSessao) {
                 this._horaInicioSessao = horaInicioSessao;
                 google.script.run
@@ -41,9 +13,7 @@
                     .obterConfiguracaoPublicaFirebase();
             },
 
-            // -------------------------------------------------------------------------
-            // CONEXÃO: cria o EventSource e registra os handlers
-            // -------------------------------------------------------------------------
+            // CONEXÃO
             _conectar(config) {
                 if (!config?.dbUrl) {
                     console.warn('[FirebaseListener] Config inválida ou dbUrl ausente.');
@@ -57,9 +27,7 @@
                     console.error('[FirebaseListener] Erro de conexão SSE:', err);
             },
 
-            // -------------------------------------------------------------------------
-            // HANDLER: parse, validação e roteamento por status
-            // -------------------------------------------------------------------------
+            // HANDLERS
             _handleEvento(e) {
                 try {
                     const parsed = JSON.parse(e.data);
@@ -67,10 +35,8 @@
 
                     const { ticket, sessionId, status, timestamp } = parsed.data;
 
-                    // Descarta eventos anteriores ao início desta sessão
                     if (timestamp && timestamp < this._horaInicioSessao) return;
 
-                    // Processa apenas eventos de OUTRAS sessões
                     if (!ticket || sessionId === window.AppStore.getState().sessionId) return;
 
                     switch (status) {
@@ -91,11 +57,6 @@
                 }
             },
 
-            // -------------------------------------------------------------------------
-            // HANDLERS DE STATUS
-            // -------------------------------------------------------------------------
-
-            // Outro usuário começou a alterar o ticket
             _processando(ticket) {
                 window.AppStore.marcarTicketEmProcessamento(ticket);
 
@@ -106,12 +67,10 @@
                 });
             },
 
-            // Gravação concluída com sucesso - mantém overlay até o dado chegar do backend
             _sucesso(ticket) {
                 window.AppStore._fetchEAtualizarTicket(ticket);
             },
 
-            // Gravação encerrada com erro - remove do array e avisa o usuário
             _erro(ticket) {
                 window.AppStore.concluirProcessamentoTicket(ticket);
 

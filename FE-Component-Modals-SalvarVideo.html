@@ -1,0 +1,178 @@
+<script>
+    (function () {
+        // 1. ESTILIZAÇÕES ESPECÍFICAS (CSS Injetado)
+        const styleId = 'style-modal-salvar-video';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+                #app-active-modal .app-modal-card.modal-salvar-video {
+                    max-width: 480px;
+                }
+                .modal-salvar-video-desc {
+                    margin: 0 0 6px 0;
+                    font-size: 0.88rem;
+                    color: #475569;
+                    line-height: 1.5;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // 2. ESTRUTURA TEMPLATE / HTML
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function getSalvarVideoHTML(ticket, linkAtual) {
+            const temLink = Boolean(linkAtual && linkAtual.trim());
+            const acaoTexto = temLink ? 'atualizar o link' : 'informar o link';
+
+            return `
+                <p class="modal-salvar-video-desc">
+                    Informe o link do vídeo oficial para ${acaoTexto} do ticket <strong>${escapeHtml(ticket)}</strong>:
+                </p>
+                <div class="app-modal-field-group">
+                    <label for="modal-video-link-input" class="app-modal-field-label">Link do Vídeo Oficial *</label>
+                    <input 
+                        type="url" 
+                        id="modal-video-link-input" 
+                        class="app-modal-input" 
+                        placeholder="https://..." 
+                        value="${escapeHtml(linkAtual || '')}" 
+                        autocomplete="off"
+                    />
+                    <span id="modal-video-link-error" class="app-modal-error-text">Por favor, informe um link válido.</span>
+                </div>
+            `;
+        }
+
+        // 3. LÓGICAS EXCLUSIVAS DE INTERFACE (Abertura e Handlers de UI)
+        window.ModalServices = window.ModalServices || {};
+
+        window.ModalServices.abrirModalSalvarVideo = function (resposta) {
+            if (!window.ModalServices.renderModalBase) {
+                return console.error('FE-Component-Modals.html não carregado.');
+            }
+            if (!resposta?.ticket) {
+                return console.error('Parâmetro "resposta" é obrigatório e deve possuir ticket.');
+            }
+
+            const linkAtual = resposta.urlVideoOficial ? String(resposta.urlVideoOficial).trim() : '';
+            const jaPossuiLink = Boolean(linkAtual);
+
+            const tituloModal = jaPossuiLink ? 'Atualizar Link do Vídeo' : 'Salvar Link do Vídeo';
+            const btnLabel = jaPossuiLink ? 'Atualizar' : 'Salvar';
+            const btnVariant = jaPossuiLink ? 'app-btn-orange' : 'app-btn-blue';
+
+            const modalRef = window.ModalServices.renderModalBase({
+                title: tituloModal,
+                bodyHtml: getSalvarVideoHTML(resposta.ticket, linkAtual),
+                buttons: [
+                    {
+                        label: 'Cancelar',
+                        variant: 'app-btn-light',
+                        onClick: () => modalRef.fechar()
+                    },
+                    {
+                        label: btnLabel,
+                        variant: btnVariant,
+                        onClick: () => salvarOuAtualizarVideo()
+                    }
+                ]
+            });
+
+            const card = document.querySelector('#app-active-modal .app-modal-card');
+            card?.classList.add('modal-salvar-video');
+
+            const inputEl = document.getElementById('modal-video-link-input');
+            const errorEl = document.getElementById('modal-video-link-error');
+
+            if (inputEl) {
+                inputEl.focus();
+                if (inputEl.value) {
+                    inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+                }
+
+                inputEl.oninput = () => {
+                    inputEl.classList.remove('input-error');
+                    errorEl?.classList.remove('visible');
+                };
+
+                inputEl.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        salvarOuAtualizarVideo();
+                    }
+                };
+            }
+
+            function salvarOuAtualizarVideo() {
+                const resultado = validarELimparUrl(inputEl, errorEl);
+                if (!resultado.valido) return;
+
+                executarSalvarVideo(resposta.ticket, resultado.url, jaPossuiLink);
+                modalRef.fechar();
+            }
+        };
+
+        // Alias de compatibilidade
+        window.ModalServices.abrirModalSalvarLinkVideo = window.ModalServices.abrirModalSalvarVideo;
+
+        // 4. LÓGICAS DE REGRA DE NEGÓCIO (Validação e Comunicação com AppStore)
+        function validarELimparUrl(inputEl, errorEl) {
+            const valor = inputEl ? inputEl.value.trim() : '';
+
+            if (!valor) {
+                if (inputEl) inputEl.classList.add('input-error');
+                if (errorEl) {
+                    errorEl.textContent = 'Por favor, informe o link do vídeo.';
+                    errorEl.classList.add('visible');
+                }
+                inputEl?.focus();
+                return { valido: false };
+            }
+
+            let urlFormatada = valor;
+            if (!/^https?:\/\//i.test(urlFormatada)) {
+                urlFormatada = 'https://' + urlFormatada;
+            }
+
+            try {
+                const parsed = new URL(urlFormatada);
+                if (!parsed.hostname || !parsed.hostname.includes('.')) {
+                    throw new Error('Hostname inválido');
+                }
+            } catch (e) {
+                if (inputEl) inputEl.classList.add('input-error');
+                if (errorEl) {
+                    errorEl.textContent = 'Por favor, informe uma URL válida (ex: https://...).';
+                    errorEl.classList.add('visible');
+                }
+                inputEl?.focus();
+                return { valido: false };
+            }
+
+            return { valido: true, url: urlFormatada };
+        }
+
+        function executarSalvarVideo(ticket, urlVideoOficial, jaPossuiLink) {
+            if (window.AppStore?.atualizarTicket) {
+                window.AppStore.atualizarTicket(ticket, { urlVideoOficial: urlVideoOficial });
+                if (window.FEComponenteToast?.exibir) {
+                    window.FEComponenteToast.exibir({
+                        texto: jaPossuiLink ? 'Link do vídeo atualizado com sucesso!' : 'Link do vídeo salvo com sucesso!',
+                        cor: '#2E7D32'
+                    });
+                }
+            } else {
+                console.error('AppStore.atualizarTicket não está disponível.');
+            }
+        }
+    })();
+</script>

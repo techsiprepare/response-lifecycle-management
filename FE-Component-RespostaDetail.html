@@ -128,6 +128,9 @@
       const motivo = item.motivo || 'Sem observações...';
       const responsavel = item.responsavel || 'Não atribuído';
       const nomeAluno = item.nomeCompleto || 'Aluno não informado';
+      const videoOficial = item.urlVideoOficial
+        ? `<a href="${item.urlVideoOficial}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; word-break: break-all;">${item.urlVideoOficial}</a>`
+        : 'Não publicado no canal do YouTube do projeto.';
 
       const btnFecharHtml = window.AppButton.render({
         label: '✕',
@@ -182,11 +185,16 @@
                 <span class="info-label">Pré-Curadoria</span>
                 <span class="info-value">${preCuradoria}</span>
               </div>
-
+              
+              <div class="info-group">
+                <span class="info-label">Vídeo Oficial</span>
+                <span class="info-value">${videoOficial}</span>
+              </div>     
+              
               <div class="info-group">
                 <span class="info-label">Observações</span>
                 <span class="info-value">${motivo}</span>
-              </div>                  
+              </div>                               
             </div>
 
             <div class="detail-status-section" id="detail-tab-content">

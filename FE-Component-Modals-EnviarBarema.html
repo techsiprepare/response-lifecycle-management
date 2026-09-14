@@ -1,0 +1,527 @@
+<script>
+    (function () {
+        // 1. ESTILIZAÇÕES ESPECÍFICAS (CSS Injetado)
+        const styleId = 'style-modal-enviar-barema';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+                #app-active-modal .app-modal-card.modal-barema {
+                    max-width: 520px;
+                }
+
+                .modal-barema-context {
+                    margin: 0 0 4px 0;
+                    font-size: 0.88rem;
+                    color: #475569;
+                    line-height: 1.5;
+                }
+
+                .modal-barema-status-box {
+                    padding: 12px 14px;
+                    border-radius: 8px;
+                    font-size: 0.85rem;
+                    line-height: 1.4;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                    margin-top: 6px;
+                    align-items: center;
+                }
+
+                .modal-barema-status-box.warning {
+                    background-color: #fffbeb;
+                    border: 1px solid #fcd34d;
+                    color: #92400e;
+                }
+
+                .modal-barema-status-box.success {
+                    background-color: #f0fdf4;
+                    border: 1px solid #86efac;
+                    color: #166534;
+                }
+
+                .modal-barema-status-box.error {
+                    background-color: #fef2f2;
+                    border: 1px solid #fca5a5;
+                    color: #991b1b;
+                }
+
+                .modal-barema-status-box .app-btn {
+                    align-self: flex-start;
+                }
+
+                .modal-barema-loading-wrapper {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 12px;
+                    background: #f8fafc;
+                    border-radius: 8px;
+                    border: 1px solid #e2e8f0;
+                    font-size: 0.85rem;
+                    color: #475569;
+                    margin-top: 6px;
+                }
+
+                .modal-barema-spinner {
+                    width: 18px;
+                    height: 18px;
+                    border: 2px solid #cbd5e1;
+                    border-top-color: #0284c7;
+                    border-radius: 50%;
+                    animation: barema-spin 0.8s linear infinite;
+                    flex-shrink: 0;
+                }
+
+                @keyframes barema-spin {
+                    to { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // 2. ESTRUTURA TEMPLATE / HTML
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function getVideoSelectOptionsHTML(resposta) {
+            const options = [];
+
+            if (resposta?.urlVideoOriginal) {
+                options.push(`
+                    <option value="${escapeHtml(resposta.urlVideoOriginal)}" data-rotulo="URL Original">
+                        URL Original
+                    </option>
+                `);
+            }
+
+            if (Array.isArray(resposta?.reenvios)) {
+                resposta.reenvios.forEach((reenvio) => {
+                    if (reenvio && reenvio.urlAtualizada) {
+                        const dataInfo = reenvio.carimboDataHora ? ` — ${reenvio.carimboDataHora}` : '';
+                        const labelExibido = `URL Atualizada${dataInfo}`;
+                        options.push(`
+                            <option value="${escapeHtml(reenvio.urlAtualizada)}" data-rotulo="URL Atualizada">
+                                ${escapeHtml(labelExibido)}
+                            </option>
+                        `);
+                    }
+                });
+            }
+
+            if (options.length === 0) {
+                return '<option value="" disabled selected>Nenhum vídeo disponível</option>';
+            }
+
+            return `
+                <option value="" disabled selected>-- Selecione o vídeo do ticket --</option>
+                ${options.join('')}
+            `;
+        }
+
+        function getBodyBaremaAluno(resposta) {
+            const nomeAluno = escapeHtml(resposta.nomeCompleto || 'Aluno');
+            const ticket = escapeHtml(resposta.ticket || '');
+
+            return `
+                <p class="modal-barema-context">
+                    Informe corretamente os dados para criar um rascunho no gmail contendo o barema para a correção do vídeo.
+                </p>
+                <div class="app-modal-field-group">
+                    <label for="barema-video-select" class="app-modal-field-label">Vídeo do Ticket</label>
+                    <select id="barema-video-select" class="app-modal-input">
+                        ${getVideoSelectOptionsHTML(resposta)}
+                    </select>
+                    <span id="err-barema-video" class="app-modal-error-text">Por favor, selecione um vídeo.</span>
+                </div>
+                <div id="barema-status-area" data-ticket="${ticket}"></div>
+            `;
+        }
+
+        function getBodySolicitarProfessor(resposta) {
+            const nomeAluno = escapeHtml(resposta.nomeCompleto || 'Aluno');
+            const ticket = escapeHtml(resposta.ticket || '');
+
+            return `
+                <p class="modal-barema-context">
+                    Informe corretamente os dados para criar um rascunho no gmail contendo o barema para a correção do vídeo.
+                </p>
+                <div class="app-modal-field-group">
+                    <label for="barema-video-select" class="app-modal-field-label">Vídeo do Ticket *</label>
+                    <select id="barema-video-select" class="app-modal-input">
+                        ${getVideoSelectOptionsHTML(resposta)}
+                    </select>
+                    <span id="err-barema-video" class="app-modal-error-text">Por favor, selecione um vídeo.</span>
+                </div>
+                <div class="app-modal-field-group">
+                    <label for="barema-prof-email" class="app-modal-field-label">E-mail do Professor *</label>
+                    <input id="barema-prof-email" type="email" class="app-modal-input" placeholder="professor@exemplo.com" autocomplete="email" />
+                    <span id="err-barema-prof-email" class="app-modal-error-text">Insira um e-mail válido.</span>
+                </div>
+                <div id="barema-status-area" data-ticket="${ticket}"></div>
+            `;
+        }
+
+        function getStatusBoxHTML(tipo, mensagem, mostrarBotaoGmail, ticket) {
+            let botaoGmailHtml = '';
+
+            const variantMap = {
+                'success': 'app-btn-success',
+                'warning': 'app-btn-orange',
+                'error': 'app-btn-danger'
+            };
+            const btnVariant = variantMap[tipo] || 'app-btn-light';
+
+            const safeTicket = (ticket || document.getElementById('barema-status-area')?.getAttribute('data-ticket') || '').trim();
+            const query = safeTicket ? encodeURIComponent('in:drafts "' + safeTicket + '"') : '';
+            const draftsUrl = safeTicket
+                ? `https://mail.google.com/mail/u/0/#search/${query}`
+                : 'https://mail.google.com/mail/u/0/#drafts';
+
+            if (mostrarBotaoGmail) {
+                if (window.AppButton && typeof window.AppButton.render === 'function') {
+                    botaoGmailHtml = window.AppButton.render({
+                        label: 'Abrir email no rascunho',
+                        variant: btnVariant,
+                        onClickHandler: () => {
+                            if (window.AppStore && typeof window.AppStore.abrirEmailNoRascunho === 'function') {
+                                window.AppStore.abrirEmailNoRascunho(safeTicket);
+                            } else {
+                                window.open(draftsUrl, '_blank');
+                            }
+                        }
+                    });
+                } else {
+                    const safeTicketParam = encodeURIComponent(safeTicket);
+                    botaoGmailHtml = `
+                        <button type="button" class="app-btn ${btnVariant}" onclick="window.AppStore?.abrirEmailNoRascunho ? window.AppStore.abrirEmailNoRascunho(decodeURIComponent('${safeTicketParam}')) : window.open('${draftsUrl}', '_blank')">
+                            Abrir email no rascunho
+                        </button>
+                    `;
+                }
+            }
+
+            return `
+                <div class="modal-barema-status-box ${tipo}">
+                    <div>${mensagem}</div>
+                    ${botaoGmailHtml}
+                </div>
+            `;
+        }
+
+        function getLoadingHTML(texto) {
+            return `
+                <div class="modal-barema-loading-wrapper">
+                    <div class="modal-barema-spinner"></div>
+                    <span>${escapeHtml(texto)}</span>
+                </div>
+            `;
+        }
+
+        // 3. LÓGICAS EXCLUSIVAS DE INTERFACE
+        window.ModalServices = window.ModalServices || {};
+
+        window.ModalServices.abrirModalEnviarBaremaAluno = function (resposta) {
+            if (!window.ModalServices.renderModalBase) {
+                return console.error('FE-Component-Modals.html não carregado.');
+            }
+            if (!resposta?.ticket) {
+                return console.error('Parâmetro "resposta" é obrigatório e deve possuir ticket.');
+            }
+
+            const modalRef = window.ModalServices.renderModalBase({
+                title: 'Enviar Barema para Aluno',
+                bodyHtml: getBodyBaremaAluno(resposta),
+                buttons: [
+                    {
+                        label: 'Cancelar',
+                        variant: 'app-btn-light',
+                        onClick: () => modalRef.fechar()
+                    },
+                    {
+                        label: 'Criar Rascunho no Gmail',
+                        variant: 'app-btn-blue',
+                        onClick: () => executarCriacaoRascunho(resposta, modalRef, { modo: 'ALUNO' })
+                    }
+                ]
+            });
+
+            const card = document.querySelector('#app-active-modal .app-modal-card');
+            card?.classList.add('modal-barema');
+
+            const videoSelect = document.getElementById('barema-video-select');
+            videoSelect?.addEventListener('change', () => {
+                videoSelect.classList.remove('input-error');
+                document.getElementById('err-barema-video')?.classList.remove('visible');
+            });
+        };
+
+        window.ModalServices.abrirModalSolicitarAvaliacaoProfessor = function (resposta) {
+            if (!window.ModalServices.renderModalBase) {
+                return console.error('FE-Component-Modals.html não carregado.');
+            }
+            if (!resposta?.ticket) {
+                return console.error('Parâmetro "resposta" é obrigatório e deve possuir ticket.');
+            }
+
+            const modalRef = window.ModalServices.renderModalBase({
+                title: 'Solicitar Avaliação p/ Professor',
+                bodyHtml: getBodySolicitarProfessor(resposta),
+                buttons: [
+                    {
+                        label: 'Cancelar',
+                        variant: 'app-btn-light',
+                        onClick: () => modalRef.fechar()
+                    },
+                    {
+                        label: 'Criar Rascunho no Gmail',
+                        variant: 'app-btn-blue',
+                        onClick: () => executarCriacaoRascunho(resposta, modalRef, { modo: 'PROFESSOR' })
+                    }
+                ]
+            });
+
+            const card = document.querySelector('#app-active-modal .app-modal-card');
+            card?.classList.add('modal-barema');
+
+            const videoSelect = document.getElementById('barema-video-select');
+            videoSelect?.addEventListener('change', () => {
+                videoSelect.classList.remove('input-error');
+                document.getElementById('err-barema-video')?.classList.remove('visible');
+            });
+
+            const emailInput = document.getElementById('barema-prof-email');
+            emailInput?.addEventListener('input', () => {
+                emailInput.classList.remove('input-error');
+                document.getElementById('err-barema-prof-email')?.classList.remove('visible');
+            });
+        };
+
+        function exibirFeedbackNoModal(tipo, mensagem, mostrarBotaoGmail, ticket) {
+            const statusArea = document.getElementById('barema-status-area');
+            if (statusArea) {
+                const ticketFinal = ticket || statusArea.getAttribute('data-ticket') || '';
+                statusArea.innerHTML = getStatusBoxHTML(tipo, mensagem, mostrarBotaoGmail, ticketFinal);
+            }
+        }
+
+        function exibirLoadingNoModal(texto) {
+            const statusArea = document.getElementById('barema-status-area');
+            if (statusArea) {
+                statusArea.innerHTML = getLoadingHTML(texto);
+            }
+        }
+
+        function setFooterBotoesDesabilitados(desabilitado) {
+            const container = document.getElementById('app-active-modal');
+            if (!container) return;
+
+            const botoesFooter = container.querySelectorAll('.app-modal-footer button, .app-modal-footer a');
+            botoesFooter.forEach((btn) => {
+                btn.disabled = desabilitado;
+                if (desabilitado) {
+                    btn.classList.add('disabled');
+                    btn.style.pointerEvents = 'none';
+                } else {
+                    btn.classList.remove('disabled');
+                    btn.style.pointerEvents = '';
+                }
+            });
+
+            const inputs = container.querySelectorAll('.app-modal-body input, .app-modal-body select');
+            inputs.forEach((input) => {
+                input.disabled = desabilitado;
+            });
+        }
+
+        // 4. LÓGICAS DE REGRA DE NEGÓCIO
+        function validarVideoSelecionado() {
+            const videoSelect = document.getElementById('barema-video-select');
+            const errVideo = document.getElementById('err-barema-video');
+            const valor = videoSelect?.value?.trim();
+
+            if (!valor) {
+                videoSelect?.classList.add('input-error');
+                errVideo?.classList.add('visible');
+                videoSelect?.focus();
+                return false;
+            }
+
+            videoSelect?.classList.remove('input-error');
+            errVideo?.classList.remove('visible');
+            return true;
+        }
+
+        function validarEmailProfessor() {
+            const emailInput = document.getElementById('barema-prof-email');
+            const errEmail = document.getElementById('err-barema-prof-email');
+            const emailValor = emailInput ? emailInput.value.trim() : '';
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!emailValor || !emailRegex.test(emailValor)) {
+                emailInput?.classList.add('input-error');
+                errEmail?.classList.add('visible');
+                emailInput?.focus();
+                return false;
+            }
+
+            emailInput?.classList.remove('input-error');
+            errEmail?.classList.remove('visible');
+            return true;
+        }
+
+        function montarDadosBarema(resposta, videoUrl, rotuloUrl, modo, formReenvioUrl = '') {
+            return {
+                modo: modo,
+                nomeAluno: resposta.nomeCompleto || '',
+                ticket: resposta.ticket || '',
+                responsavel: resposta.responsavel || '',
+                dataAtual: new Date().toLocaleDateString('pt-BR'),
+                idProva: resposta.idProva || '',
+                questaoNum: resposta.questaoNum || '',
+                tipoQuestao: resposta.tipo || '',
+                verQuestaoSite: resposta.verQuestaoSite || '',
+                linkVideoUrl: videoUrl || '',
+                rotuloUrl: rotuloUrl || 'URL Atualizada',
+                formReenvioUrl: formReenvioUrl || window.AppStore?.state?.formReenvioUrl || '#'
+            };
+        }
+
+        async function executarCriacaoRascunho(resposta, modalRef, opcoes = {}) {
+            const modo = opcoes.modo || 'ALUNO';
+
+            if (modo === 'PROFESSOR' && !validarEmailProfessor()) {
+                return;
+            }
+
+            if (!validarVideoSelecionado()) {
+                return;
+            }
+
+            const videoSelect = document.getElementById('barema-video-select');
+            const videoUrl = videoSelect.value;
+            const selectedOption = videoSelect.options[videoSelect.selectedIndex];
+            const rotuloUrl = selectedOption?.getAttribute('data-rotulo') || selectedOption?.text || 'URL Atualizada';
+
+            const emailsAluno = [resposta.emailPessoal, resposta.emailInstitucional]
+                .filter(Boolean)
+                .map(e => e.trim())
+                .filter(e => e.length > 0)
+                .join(', ');
+
+            let to = '';
+            let cc = '';
+
+            if (modo === 'ALUNO') {
+                to = emailsAluno;
+                cc = '';
+            } else {
+                to = document.getElementById('barema-prof-email').value.trim();
+                cc = emailsAluno;
+            }
+
+            if (!to) {
+                exibirFeedbackNoModal('error', 'Nenhum e-mail de destinatário disponível para envio.', false);
+                return;
+            }
+
+            if (!window.FEComponentBarema || typeof window.FEComponentBarema.renderHtml !== 'function') {
+                exibirFeedbackNoModal('error', 'Componente Barema (FE-Component-Barema) não encontrado.', false);
+                return;
+            }
+
+            let formReenvioUrl = window.AppStore?.state?.formReenvioUrl || '';
+            if (!formReenvioUrl && window.AppStore?.obterUrlFormReenvio) {
+                try {
+                    formReenvioUrl = await window.AppStore.obterUrlFormReenvio();
+                } catch (e) {
+                    console.warn('Erro ao obter link do formulário de reenvio:', e);
+                }
+            }
+
+            const dadosBarema = montarDadosBarema(resposta, videoUrl, rotuloUrl, modo, formReenvioUrl);
+            const corpoHtml = window.FEComponentBarema.renderHtml(dadosBarema);
+
+            const payload = {
+                ticket: resposta.ticket,
+                to: to,
+                cc: cc,
+                corpoHtml: corpoHtml,
+                corpoText: ''
+            };
+
+            setFooterBotoesDesabilitados(true);
+            exibirLoadingNoModal('Verificando rascunhos existentes...');
+
+            if (typeof google !== 'undefined' && google.script?.run) {
+                google.script.run
+                    .withSuccessHandler((rascunhoExistente) => {
+                        if (rascunhoExistente) {
+                            exibirFeedbackNoModal(
+                                'warning',
+                                'Já existe um rascunho de e-mail criado para este ticket no Gmail.',
+                                true,
+                                resposta.ticket
+                            );
+                            setFooterBotoesDesabilitados(false);
+                        } else {
+                            _criarRascunhoNoBackend(payload);
+                        }
+                    })
+                    .withFailureHandler((err) => {
+                        console.error('Erro ao verificar rascunho:', err);
+                        exibirFeedbackNoModal(
+                            'error',
+                            'Erro ao verificar rascunho existente: ' + (err.message || err),
+                            false
+                        );
+                        setFooterBotoesDesabilitados(false);
+                    })
+                    .verificarRascunhoExistente(resposta.ticket);
+            } else {
+                console.warn('google.script.run não disponível.');
+                exibirFeedbackNoModal('error', 'Ambiente Google Apps Script indisponível para comunicação com o Gmail.', false);
+                setFooterBotoesDesabilitados(false);
+            }
+        }
+
+        function _criarRascunhoNoBackend(payload) {
+            exibirLoadingNoModal('Criando rascunho no Gmail...');
+
+            google.script.run
+                .withSuccessHandler((rascunhoCriado) => {
+                    exibirFeedbackNoModal(
+                        'success',
+                        'Rascunho de e-mail criado com sucesso no Gmail!',
+                        true,
+                        payload.ticket
+                    );
+                    setFooterBotoesDesabilitados(false);
+                    if (window.FEComponenteToast?.exibir) {
+                        window.FEComponenteToast.exibir({
+                            texto: 'Rascunho criado no Gmail com sucesso!',
+                            cor: '#2E7D32'
+                        });
+                    }
+                })
+                .withFailureHandler((err) => {
+                    console.error('Erro ao criar rascunho:', err);
+                    exibirFeedbackNoModal(
+                        'error',
+                        'Erro ao criar rascunho: ' + (err.message || err),
+                        false
+                    );
+                    setFooterBotoesDesabilitados(false);
+                })
+                .criarRascunhoEmail(payload);
+        }
+    })();
+</script>

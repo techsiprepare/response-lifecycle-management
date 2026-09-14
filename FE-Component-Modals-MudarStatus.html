@@ -39,7 +39,7 @@
         function getMudarStatusHTML(ticket, novoStatus) {
             const campoAdicional = getCampoDinamicoHTML(novoStatus);
             return `
-                <p>Deseja alterar o Ticket <strong>#${ticket}</strong> para <strong>"${novoStatus}"</strong>?</p>
+                <p>Deseja alterar o Ticket <strong>${ticket}</strong> para <strong>"${novoStatus}"</strong>?</p>
                 ${campoAdicional}
             `;
         }

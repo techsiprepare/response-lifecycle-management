@@ -8,6 +8,21 @@
 </head>
 
 <style>
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    *::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        background: transparent;
+    }
+
+    html,
+    body,
+    * {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #3d4a57;
@@ -33,6 +48,9 @@
     <?!= include('FE-Component-Modals-MudarStatus'); ?>
     <?!= include('FE-Component-Modals-ListagemLinks'); ?>
     <?!= include('FE-Component-Modals-CorrigirPreCuradoria'); ?>
+    <?!= include('FE-Component-Modals-SalvarVideo'); ?>
+    <?!= include('FE-Component-Barema'); ?>
+    <?!= include('FE-Component-Modals-EnviarBarema'); ?>
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {

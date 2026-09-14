@@ -1,0 +1,175 @@
+<script>
+    (function () {
+        // 1. ESTILIZAÇÕES
+        const styleId = 'style-app-barema';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+                .app-barema-wrapper {
+                  box-sizing: border-box;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        window.FEComponentBarema = window.FEComponentBarema || {};
+
+        // 2. ESTRUTURA TEMPLATE / HTML (Com CSS Inline para compatibilidade de E-mail)
+        function buildCategoryRowHTML(categoria) {
+            return `
+                <tr style="background-color: #f2f2f2; font-weight: bold;">
+                <td colspan="4" style="border: 1px solid #dddddd; padding: 8px; background-color: #f2f2f2; font-weight: bold; color: #333333; font-size: 13px;">
+                    ${categoria}
+                </td>
+                </tr>
+            `;
+        }
+
+        function buildCriterionRowHTML(criterio) {
+            return `
+                <tr>
+                <td style="border: 1px solid #dddddd; padding: 8px; text-align: left; vertical-align: middle; font-size: 13px; color: #333333;">${criterio}</td>
+                <td style="border: 1px solid #dddddd; padding: 8px; text-align: center; vertical-align: middle; font-size: 13px;">&nbsp;</td>
+                <td style="border: 1px solid #dddddd; padding: 8px; text-align: center; vertical-align: middle; font-size: 13px;">&nbsp;</td>
+                <td style="border: 1px solid #dddddd; padding: 8px; text-align: left; vertical-align: middle; font-size: 13px;"></td>
+                </tr>
+            `;
+        }
+
+        function buildBannerHTML(modo) {
+            if (modo !== 'PROFESSOR') return '';
+            return `
+                <div style="margin-bottom: 15px; background-color: #e8f4f8; border-radius: 4px;">
+                <p style="margin: 0 0 8px 0; color: #333333; font-size: 13px; line-height: 1.5;"><strong>Aluno,</strong> espere o professor corrigir e reenviar o barema completo aqui por este e-mail.</p>
+                <p style="margin: 0; color: #333333; font-size: 13px; line-height: 1.5;"><strong>Professor,</strong> segue informações da resposta a ser corrigida, preencha o barema e dê as suas considerações. Ao terminar, reenvie-o preenchido.</p>
+                </div>
+            `;
+        }
+
+        function buildFullBaremaHTML(params, rowsHtml, bannerHtml) {
+            return `
+                <div class="app-barema-wrapper" style="font-family: Arial, sans-serif; font-size: 13px; color: #333333; background-color: #ffffff; max-width: 700px; margin: 0 auto; padding: 20px; border: 1px solid #dddddd; box-shadow: 0 2px 8px rgba(0,0,0,0.08); line-height: 1.5;">
+                <h2 style="color: #000000; border-bottom: 2px solid #356854; padding-bottom: 5px; margin: 0 0 15px 0; font-size: 1.4em; font-family: Arial, sans-serif;">TechSI Prepare - Resolução de Questões do ENADE</h2>
+                
+                ${bannerHtml}
+
+                <div style="padding: 12px 14px; margin-bottom: 15px; border: 1px solid #dddddd; border-left: 4px solid #356854; background-color: #f8f9fa;">
+                    <p style="margin: 4px 0; font-size: 13px;"><strong>Aluno:</strong> ${params.nomeAluno}</p>
+                    <p style="margin: 4px 0; font-size: 13px;"><strong>Ticket da Resposta:</strong> <code style="background-color: #e0e0e0; padding: 2px 6px; font-family: monospace; font-size: 0.9em; border-radius: 3px;">${params.ticket}</code></p>
+                    <p style="margin: 4px 0; font-size: 13px;"><strong>Responsável:</strong> ${params.responsavel}</p>
+                    <p style="margin: 4px 0; font-size: 13px;"><strong>Data da Solicitação/Correção:</strong> ${params.dataAtual}</p>
+                    <p style="margin: 4px 0; font-size: 13px;"><strong>Questão:</strong> Prova ${params.idProva} | Qst ${params.questaoNum} (${params.tipoQuestao})</p>
+                    <p style="margin: 4px 0; font-size: 13px;"><strong>Link do Enunciado:</strong> <a href="${params.verQuestaoSite}" target="_blank" style="color: #356854; font-weight: bold; text-decoration: underline;">Ver Enunciado da Questão no Site</a></p>
+                    <p style="margin: 4px 0; font-size: 13px;"><strong>Link do Vídeo Submetido:</strong> <a href="${params.linkVideoUrl}" target="_blank" style="color: #356854; font-weight: bold; text-decoration: underline;">Assistir Vídeo Submetido</a> <span style="font-size: 0.85em; color: #666666; font-weight: normal; font-style: italic;">(${params.rotuloUrl})</span></p>
+                </div>
+
+                <table style="border-collapse: collapse; width: 100%; border: 1px solid #dddddd; font-size: 13px; margin-bottom: 20px; font-family: Arial, sans-serif;">
+                    <thead>
+                    <tr style="background-color: #356854; color: #ffffff;">
+                        <th style="border: 1px solid #dddddd; padding: 8px; text-align: left; width: 35%; background-color: #356854; color: #ffffff; font-weight: bold;">Critério Exigido</th>
+                        <th style="border: 1px solid #dddddd; padding: 8px; text-align: center; width: 15%; background-color: #356854; color: #ffffff; font-weight: bold;">Atende</th>
+                        <th style="border: 1px solid #dddddd; padding: 8px; text-align: center; width: 15%; background-color: #356854; color: #ffffff; font-weight: bold;">Não Atende</th>
+                        <th style="border: 1px solid #dddddd; padding: 8px; text-align: left; width: 35%; background-color: #356854; color: #ffffff; font-weight: bold;">Observações</th>
+                    </tr>
+                    </thead>
+                    <tbody>${rowsHtml}</tbody>
+                </table>
+
+                <div style="padding: 12px 14px; margin-bottom: 15px; border: 1px solid #dddddd; background-color: #ffffff;">
+                    <p style="margin: 4px 0; font-weight: bold;">Observações Gerais:</p>
+                    <p style="margin: 4px 0; color: #666666; font-style: italic;">[ Insira aqui os comentários e orientações para o aluno ]</p>
+                </div>
+
+                <div style="padding: 12px 14px; margin-bottom: 15px; border: 1px solid #ffe0b2; background-color: #fff3cd; color: #856404;">
+                    <p style="margin: 4px 0; font-weight: bold;">Situação Parecer Final:</p>
+                    <p style="margin: 4px 0;">( &nbsp; ) Aprovado &nbsp;&nbsp;&nbsp;&nbsp; ( &nbsp; ) Devolvido para ajustes</p>
+                </div>
+
+                <div style="padding: 12px 14px; margin-bottom: 15px; border: 1px solid #dddddd; border-left: 4px solid #356854; background-color: #f8f9fa;">
+                    <p style="margin: 4px 0;"><strong>Atenção:</strong> Se a sua resposta foi devolvida para ajustes, acesse o link abaixo para enviar a versão atualizada do seu vídeo:</p>
+                    <a href="${params.formReenvioUrl}" target="_blank" style="display: inline-block; padding: 8px 14px; background-color: #356854; color: #ffffff; text-decoration: none; font-weight: bold; font-size: 0.9em; border-radius: 4px; margin-top: 6px;">Formulário de Reenvio de Vídeo</a>
+                </div>
+            </div>
+        `;
+        }
+
+        // 3. LÓGICAS EXCLUSIVAS DE INTERFACE (Montagem do HTML da Tabela)
+        function gerarTabelaCritériosHTML(baremaData) {
+            return baremaData.map(secao => {
+                const catRow = buildCategoryRowHTML(secao.categoria);
+                const critRows = secao.criterios.map(criterio => buildCriterionRowHTML(criterio)).join('');
+                return catRow + critRows;
+            }).join('');
+        }
+
+        window.FEComponentBarema = {
+            renderHtml: function (config = {}) {
+                const params = normalizarConfigBarema(config);
+                const rowsHtml = gerarTabelaCritériosHTML(BAREMA_DATA);
+                const bannerHtml = buildBannerHTML(params.modo);
+
+                return buildFullBaremaHTML(params, rowsHtml, bannerHtml);
+            }
+        };
+
+        // 4. LÓGICAS DE REGRA DE NEGÓCIO & DADOS ESTÁTICOS
+        const BAREMA_DATA = [
+            {
+                categoria: "1. QUALIDADE TÉCNICA & FORMATO",
+                criterios: [
+                    "Imagem e som em boa qualidade/resolução (mínimo 1080p, áudio limpo)",
+                    "Presença da imagem do apresentador (Picture-in-Picture / Webcam)",
+                    "Duração adequada do vídeo (3–15m Objetiva / 5–15m Discursiva)",
+                    "Foco único (exatamente 1 questão resolvida por arquivo)",
+                    "Enviou o vídeo corretamente utilizando um link do Google Drive, assim como especificado nas orientações."
+                ]
+            },
+            {
+                categoria: "2. DIDÁTICA E CONTEÚDO",
+                criterios: [
+                    "Demonstração detalhada do raciocínio e dedução da resposta (passo a passo)",
+                    "Evita apenas apontar/revelar a resposta final sem a devida explicação",
+                    "Contextualização correta dos conceitos teóricos (sem misturar estruturas)"
+                ]
+            },
+            {
+                categoria: "3. RECURSOS VISUAIS",
+                criterios: [
+                    "Uso de recursos visuais dinâmicos (desenhos, esquemas ou diagramas)",
+                    "Ilustração visual clara da estrutura envolvida para facilitar a compreensão"
+                ]
+            },
+            {
+                categoria: "4. FIDELIDADE AO ENUNCIADO",
+                criterios: [
+                    "Utilização estrita da linguagem de programação exigida pelo exercício",
+                    "Indicação correta da resposta do exercício."
+                ]
+            },
+            {
+                categoria: "5. CONFORMIDADE",
+                criterios: [
+                    "Enviou corretamente o Formulário de Autorização de Uso de Imagem e Voz"
+                ]
+            }
+        ];
+
+        function normalizarConfigBarema(config = {}) {
+            return {
+                modo: config.modo || 'PROFESSOR',
+                nomeAluno: config.nomeAluno || '',
+                ticket: config.ticket || '',
+                responsavel: config.responsavel || '',
+                dataAtual: config.dataAtual || new Date().toLocaleDateString('pt-BR'),
+                idProva: config.idProva || '',
+                questaoNum: config.questaoNum || '',
+                tipoQuestao: config.tipoQuestao || config.tipo || '',
+                verQuestaoSite: config.verQuestaoSite || config.linkQuestaoUrl || '',
+                linkVideoUrl: config.linkVideoUrl || config.urlVideoOriginal || '',
+                rotuloUrl: config.rotuloUrl || 'URL Atualizada',
+                formReenvioUrl: config.formReenvioUrl || '#'
+            };
+        }
+    })();
+</script>

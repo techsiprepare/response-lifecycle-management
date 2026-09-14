@@ -14,13 +14,15 @@
             filtro: '',
             ticketSelecionado: null,
             sessionId: gerarSessionId(),
-            ticketsEmProcessamento: []
+            ticketsEmProcessamento: [],
+            formReenvioUrl: ''
         },
         listeners: [],
         horaInicioSessao: Date.now(),
 
         // --- 2. CICLO DE VIDA E REATIVIDADE ---
         async init() {
+            await this.obterUrlFormReenvio();
             return new Promise((resolve, reject) => {
                 google.script.run
                     .withSuccessHandler((dados) => {
@@ -124,6 +126,38 @@
             var query = encodeURIComponent('"' + ticket + '"');
             var url = 'https://mail.google.com/mail/u/0/#search/' + query;
             window.open(url, '_blank');
+        },
+
+        abrirEmailNoRascunho(ticket) {
+            var safeTicket = (ticket || '').trim();
+            var query = safeTicket ? encodeURIComponent('in:drafts "' + safeTicket + '"') : '';
+            var url = safeTicket
+                ? 'https://mail.google.com/mail/u/0/#search/' + query
+                : 'https://mail.google.com/mail/u/0/#drafts';
+            window.open(url, '_blank');
+        },
+
+        async obterUrlFormReenvio() {
+            if (this.state.formReenvioUrl) {
+                return this.state.formReenvioUrl;
+            }
+            return new Promise((resolve) => {
+                if (typeof google !== 'undefined' && google.script?.run) {
+                    google.script.run
+                        .withSuccessHandler((url) => {
+                            const link = url || '';
+                            this.setState({ formReenvioUrl: link });
+                            resolve(link);
+                        })
+                        .withFailureHandler((err) => {
+                            console.warn('Erro ao obter link do formulário de reenvio:', err);
+                            resolve('');
+                        })
+                        .obterUrlFormReenvio();
+                } else {
+                    resolve('');
+                }
+            });
         },
 
         async verificarRascunhoExistente(ticket) {

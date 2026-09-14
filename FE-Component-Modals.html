@@ -153,7 +153,6 @@
 
       const fechar = () => window.ModalServices.fechar();
 
-      // Fallback para fechar ao clicar no backdrop escuro
       backdrop.onclick = (e) => e.target === backdrop && fechar();
 
       return { fechar };
