@@ -362,7 +362,7 @@
     }
 
     function getDuplicadosBannerHTML(item, respostas) {
-      if (!item?.questaoNum || !item?.tipo || !item?.idProva) return '';
+      if (!item) return '';
 
       const duplicatas = buscarTicketsDuplicados(item, respostas);
 
