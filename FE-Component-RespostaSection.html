@@ -35,6 +35,7 @@
       return `
         <div class="tabs-container">
           <div class="tabs-list">
+
             ${TABS_CONFIG.map(tab => {
         const count = calcularContadorStatus(respostas, tab.status);
         const isActive = filtroAtual === tab.status ? 'active' : '';
@@ -48,6 +49,10 @@
                 </button>
               `;
       }).join('')}
+            <button class="tab-item" style="margin-left: auto;" onclick="window.RespostaSection.abrirRepositorio()">
+              Ir para o Repositório
+            </button>
+
           </div>
         </div>
       `;
@@ -87,6 +92,22 @@
         return respostas.length;
       }
       return respostas.filter(r => r.status === status).length;
-    }
+    };
+
+    window.RespostaSection.abrirRepositorio = function () {
+      google.script.run
+        .withSuccessHandler(function (url) {
+          if (url) {
+            window.open(url, '_blank');
+          } else {
+            alert('URL do repositório não configurada nas Script Properties.');
+          }
+        })
+        .withFailureHandler(function (erro) {
+          console.error('Erro ao buscar URL do repositório:', erro);
+        })
+        .obterUrlRepositorio();
+    };
+
   })();
 </script>

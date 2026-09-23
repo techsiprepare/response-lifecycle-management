@@ -32,3 +32,7 @@ function obterConfiguracaoPublicaFirebase() {
 function obterUrlFormReenvio() {
   return obterPropriedadeScript('FORM_REENVIO_URL') || '';
 }
+
+function obterUrlRepositorio() {
+  return obterPropriedadeScript('URL_REPOSITORIO') || '';
+}
