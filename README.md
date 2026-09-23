@@ -2,122 +2,118 @@
 
 ## 1. Arquitetura do Sistema
 
-Este projeto implementa um sistema de gerenciamento de respostas e avaliações, desenhado primariamente para a resolução de questões do ENADE (TechSI Prepare). A arquitetura é construída sobre um ecossistema serverless trilateral que conecta o Google Apps Script (GAS), o Google Sheets e o Firebase Realtime Database.
+Este projeto implementa um sistema de gerenciamento de respostas e avaliações, desenhado primariamente para a resolução de questões do ENADE (TechSI Prepare). A arquitetura é construída sobre um ecossistema serverless trilateral que conecta o **Google Apps Script (GAS)**, o **Google Sheets** e o **Firebase Realtime Database**.
 
 O propósito da aplicação é fornecer uma interface de página única (SPA) modularizada que gerencia submissões de alunos, permitindo operações de validação, armazenamento de metadados de vídeo, curadoria e geração de rascunhos de e-mail automatizados com baremas de correção.
 
-A arquitetura trilateral funciona da seguinte maneira:
-
-* **Google Apps Script (GAS):** Atua como o motor de back-end (Controladores e Serviços), expondo rotas e executando a lógica de negócios e integrações com o ecossistema Google Workspace (Gmail e Sheets).
-
-* **Google Sheets:** Funciona como o banco de dados principal, através do isolamento de acesso via repositórios (Padrão Repository), garantindo o versionamento tabular e histórico.
-
-* **Firebase Realtime Database:** Atua como um barramento de eventos (Event Bus) focado na sincronização de estado, notificando o front-end em tempo real sobre mudanças ou processamento no back-end.
+* **Google Apps Script (GAS):** Motor de back-end (Controllers e Services), expondo rotas e executando a lógica de negócios e integrações com o ecossistema Google Workspace (Gmail e Sheets).
+* **Google Sheets:** Banco de dados principal acedido via padrão Repository (`backend/repositories`), garantindo versionamento tabular e histórico.
+* **Firebase Realtime Database:** Barramento de eventos (Event Bus) focado na sincronização de estado, notificando o front-end em tempo real sobre mudanças no back-end.
 
 ---
 
-## 2. Fluxo de Dados e Ciclo de Vida (Data Flow)
+## 2. Estrutura do Projeto
 
-O front-end adota uma Arquitetura Orientada a Eventos onde a `AppStore` atua como a Fonte Única da Verdade (Single Source of Truth). Para garantir uma experiência de usuário fluida e tolerante a latência, o sistema implementa Atualizações Otimistas (Optimistic UI).
+O projeto adota uma estrutura modular baseada em responsabilidades:
 
-### Passo a Passo de uma Operação de Escrita
+```text
+response-lifecycle-management/
+├── backend/
+│   ├── controllers/      # Handlers expostos ao front-end (Config, Gmail, Spreadsheet)
+│   ├── models/           # Entidades de domínio (Prova, Questão, Resposta, Reenvio, EmailDraft)
+│   ├── repositories/     # Camada de acesso à Google Sheets API (Base, Provas, Questoes, etc.)
+│   ├── services/         # Regras de negócio e integrações (Firebase, Gmail, Provas, Respostas)
+│   └── tests/            # Suíte de testes e validação interna
+├── frontend/
+│   ├── components/       # Componentes visuais UI em HTML/JS/CSS
+│   │   └── modals/       # Modais de interface (CorrigirPreCuradoria, EnviarBarema, etc.)
+│   ├── services/         # Listeners e conexões front-end (FirebaseListener)
+│   ├── store/            # Gerenciamento de estado otimista (AppStore)
+│   └── Index.html        # Ponto de entrada da interface
+├── bundler.py             # Script de empacotamento automático para o Apps Script
+└── README.md
+```
 
-1. **Captura de Evento:** A interação do usuário em componentes modulares (ex: `FE-Component-Modals-CorrigirPreCuradoria.html`) aciona um handler de evento.
+---
 
-2. **Atualização da Store (Atualização Otimista):** O evento invoca o método de atualização na Store global (ex: `window.AppStore.atualizarTicket(resposta.ticket, novosCampos)`). O estado local é alterado e a interface reage instantaneamente.
+## 3. Fluxo de Dados e Ciclo de Vida (Data Flow)
 
-3. **Chamada de API/GAS:** A Store despacha, de forma assíncrona, a requisição para o back-end via `google.script.run` (ex: `salvarRespostaENotificar`).
-
-4. **Processamento e Atualização da Planilha:** O back-end em GAS recebe o payload, delega ao serviço (`RespostaService`), obtém um lock de concorrência (`LockService`) e persiste as mudanças através do `RespostaRepository` na aba `Gerenciamento_Respostas`.
-
-5. **Disparo no Firebase:** Simultaneamente à persistência, o `FirebaseNotifier` despacha eventos transacionais para o nó `/ultimo_evento.json` no Firebase (emitindo status de `processando`, `sucesso` ou `erro`). O front-end, escutando estas alterações, consolida a atualização ou efetua o rollback caso ocorra falha.
-
-### Diagrama de Fluxo de Dados
+O front-end adota uma Arquitetura Orientada a Eventos onde a `AppStore` atua como a Fonte Única da Verdade (Single Source of Truth) com **Atualizações Otimistas (Optimistic UI)**.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as View (FE-Component)
+    participant UI as View (Frontend Component)
     participant Store as AppStore (Front-end)
     participant GAS as Controller (Back-end)
     participant Repos as Repository (Sheets)
     participant DB as Firebase RTDB
 
     UI->>Store: Dispara evento (Ex: salvar)
-    Store->>UI: Atualiza UI (Optimistic Update)
+    Store->>UI: Atualiza UI instantaneamente (Optimistic)
     Store->>GAS: Solicita persistência (google.script.run)
     GAS->>DB: Emite evento status='processando'
-    GAS->>Repos: LockService & Gravacao (salvarResposta)
+    GAS->>Repos: LockService & Gravação (salvarResposta)
     Repos-->>GAS: Confirmação de Gravação
-    GAS->>DB: Emite evento status='sucesso' (timestamp)
-    DB-->>Store: Sincronização via Eventos / SSE
+    GAS->>DB: Emite evento status='sucesso'
+    DB-->>Store: Sincronização em tempo real (Event Bus)
     Store->>UI: Consolida estado real
-
 ```
 
 ---
 
-## 3. Estrutura MVC e Organização do Código
+## 4. Empacotamento e Implantação (Bundler & Apps Script)
 
-O projeto implementa uma separação rigorosa de responsabilidades baseada no Padrão MVC (Model-View-Controller), reforçada pelo padrão de Repositórios e Serviços de Domínio.
+O Google Apps Script nativamente não suporta estruturas complexas de pastas aninhadas nem imports de módulos ES6 em arquivos `.html` separados sem inlining. Para manter a codebase limpa e modular durante o desenvolvimento, utilizamos o **`bundler.py`**.
 
-### Mapeamento das Responsabilidades
+O bundler consolida o projeto em apenas **2 arquivos finais**:
+* `bundled_backend.gs`: Garante a ordem correta de declaração das classes e módulos (Models -> Repositories -> Services -> Controllers -> Tests).
+* `bundled_frontend.html`: Resolve recursivamente todas as tags `<?!= include('...') ?>` e embute os componentes na interface.
 
-* **Model (Domínio e Estruturas de Dados):**
-* Classes como `Prova`, `Questao`, `Reenvio`, `Resposta` e `EmailDraft` encapsulam o formato e regras restritas dos dados.
-* Centralizam rotinas utilitárias de formatação, como processamento de datas e geração de links específicos (ex: `_gerarVerQuestaoSite`).
+### Como Executar o Bundler
 
-* **View (Componentes de Apresentação):**
-* Arquitetura modularizada em arquivos `.html`, contendo escopos isolados (IIFE) e CSS injetado dinamicamente no `head`.
-* Exemplos: `FE-Component-Barema.html` renderiza critérios de correção. `FE-Component-Buttons.html` padroniza componentes de ação iterativos.
+Certifique-se de ter o Python 3 instalado no seu ambiente local e execute:
 
-* **Controller (Ponto de Entrada e Roteamento):**
-* Arquivos como `BE-Controller-Spreadsheet.js`, `BE-Controller-Gmail.js` e `BE-Controller-Config.js` orquestram o tráfego.
-* Expostos diretamente para uso do front-end, eles invocam camadas inferiores e não mantêm lógica de negócios densa.
+```bash
+python bundler.py
+```
 
-* **Store (Gerenciamento de Estado):**
-* Isolada no front-end (`window.AppStore`), garante que os componentes da View não manipulem dados brutos ou chamadas diretas não orquestradas.
+*Se estiver executando no Windows Command Prompt/PowerShell e encontrar problemas de encoding de caracteres, utilize:*
 
-* **Services & Repositories (Integração e Persistência):**
-* **Repositories:** Herdam de `BaseSpreadsheetRepository` para encapsular a lógica da Google Sheets API, mapeando linhas em instâncias dos Models e vice-versa (`ProvaRepository`, `QuestaoRepository`, `RespostaRepository`).
+```bash
+python bundler.py
+```
+*(O script utiliza codificação UTF-8 por padrão em todas as leituras e escritas).*
 
-* **Services:** Controlam orquestrações complexas. O `GmailService` lida com a busca de *threads* e geração de rascunhos de resposta baseados em metadados da submissão. O `FirebaseNotifier` abstrai requisições `UrlFetchApp` direcionadas ao endpoint REST do Firebase.
+### Como Adicionar ao Google Apps Script (Manual)
 
-### O Papel do Firebase e o Motor GAS
-
-O Firebase funciona estritamente como um hub de notificação transacional. Ele não persiste permanentemente os dados do negócio; ele armazena payloads temporários efêmeros (ticket de referência, sessionId, status, timestamp) para contornar a limitação do GAS de não suportar Server-Sent Events (SSE) ou WebSockets de forma nativa. O GAS opera como o verdadeiro motor de back-end autoritativo, validando a integridade das persistências e aplicando regras de trava mecânica (`LockService.getScriptLock`) em operações simultâneas de escrita na planilha.
-
----
-
-## 4. Tecnologias e Integrantes do Ecossistema
-
-As seguintes tecnologias estruturam a base do projeto:
-
-* **Google Apps Script (V8 Engine):** Back-end serverless, utilizando JavaScript moderno (ES6+).
-* **Google Sheets API:** Persistência estruturada, utilizando abstrações nativas do GAS (`SpreadsheetApp`, `LockService`).
-* **Google Gmail API:** Criação e busca de rascunhos encadeados por ticket de atendimento (`GmailApp`).
-* **Firebase Realtime Database:** Barramento REST de comunicação pub/sub simplificado.
-* **Vanilla Front-end (HTML5, CSS3, JavaScript ES6+):** Renderização de componentes injetados, sem bibliotecas pesadas externas (zero-dependency approach), processados através do `HtmlService.createTemplateFromFile`.
+1. Abra o projeto Apps Script existente.
+2. Na barra lateral esquerda do Apps Script, crie exatamente **2 arquivos**:
+   - Um arquivo de **Código** (`.gs`) nomeado `bundled_backend` (ou `Code`).
+   - Um arquivo **HTML** (`.html`) nomeado `bundled_frontend` (ou `Index`).
+3. Copie o conteúdo gerado em `bundled_backend.gs` no seu ambiente local e cole no arquivo de código do Apps Script.
+4. Copie o conteúdo gerado em `bundled_frontend.html` e cole no arquivo HTML do Apps Script.
+5. Salve o projeto (`Ctrl + S` / `Cmd + S`).
 
 ---
 
-## 5. Guia de Configuração e Instalação
+## 5. Configuração de Variáveis de Ambiente (Script Properties)
 
-### Instalação no Ambiente (Google Apps Script)
+No painel do Apps Script, navegue até **Configurações do Projeto** (ícone de engrenagem) e adicione as seguintes **Propriedades do Script (Script Properties)**:
 
-1. **Via IDE Web do GAS (Importação Manual):**
-* Acesse `Extensions > Apps Script` a partir de uma Planilha Google.
-* Crie os arquivos correspondentes utilizando o mesmo esquema de nomes estruturais (ex: `BE-Controller-Config.gs`, `FE-Component-Barema.html`).
-* Copie e cole o conteúdo de cada arquivo respectivo.
+| Propriedade | Descrição | Exemplo |
+| :--- | :--- | :--- |
+| `SPREADSHEET_ID` | ID alfanumérico da planilha Google vinculada. | `1BxiMVs0XRZr...` |
+| `FIREBASE_DB_URL` | Endpoint raiz do Firebase Realtime Database. | `https://seu-projeto.firebaseio.com` |
+| `FIREBASE_SECRET` | Secret/Token de acesso para operações REST no Firebase. | `AIzaSy...` |
+| `FORM_REENVIO_URL` | *(Opcional)* Link de fallback para formulário de reenvio nos e-mails. | `https://forms.gle/...` |
+| `URL_REPOSITORIO` | *(Opcional)* Link de referência da documentação ou repositório. | `https://github.com/...` |
 
-### Configuração de Variáveis de Ambiente (Script Properties)
+---
 
-O sistema depende de chaves estritas armazenadas com segurança via `PropertiesService`. Navegue até as *Configurações do Projeto (ícone de engrenagem)* na interface web do Apps Script e adicione as seguintes **Propriedades do Script**:
+## 6. Validação do Sistema
 
-* `SPREADSHEET_ID`: ID alfanumérico da planilha Google vinculada onde os repositórios atuarão.
-* `FIREBASE_DB_URL`: Endpoint raiz do Firebase Realtime Database (Ex: `https://<nome-projeto>.firebaseio.com`).
-* `FIREBASE_SECRET`: Chave ou Token de acesso restrito (Database Secret) para permitir operações de escrita via REST.
-* `FORM_REENVIO_URL`: (Opcional) Link de fallback utilizado na renderização dos rascunhos HTML em `FE-Component-Barema.html`.
-* `URL_REPOSITORIO`: (Opcional) Referência da origem do software ou documentação externa.
-
-Finalizada a configuração, execute a rotina de validação abrindo o arquivo `BE-Test.js` na interface e rodando a função `executarTodasAsValidacoes()` para atestar a estabilidade dos módulos, injeção de propriedades e comunicação externa.
+Após colar os bundles e configurar as propriedades no Apps Script:
+1. No editor do Apps Script, selecione a função `executarTodasAsValidacoes` localizada ao final do arquivo de código (`bundled_backend.gs`).
+2. Clique em **Executar**.
+3. Verifique os logs de execução no console para confirmar se as integrações com a planilha, Firebase e Gmail foram concluídas sem erro.
