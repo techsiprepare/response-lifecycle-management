@@ -162,8 +162,9 @@
       const motivo = item.motivo || 'Sem observações...';
       const responsavel = item.responsavel || 'Não atribuído';
       const nomeAluno = item.nomeCompleto || 'Aluno não informado';
-      const videoOficial = item.urlVideoOficial
-        ? `<a href="${item.urlVideoOficial}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; word-break: break-all;">${item.urlVideoOficial}</a>`
+      const urlVideoOficial = String(item.urlVideoOficial || '').trim();
+      const videoOficial = urlVideoOficial
+        ? `<a href="${urlVideoOficial}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; word-break: break-all;">${urlVideoOficial}</a>`
         : 'Não publicado no canal do YouTube do projeto.';
 
       const btnFecharHtml = window.AppButton.render({

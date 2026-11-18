@@ -20,6 +20,12 @@
                 .app-btn-blue:hover:not(:disabled) { background-color: #bae6fd; }
                 .app-btn-orange { background-color: #ffedd5; color: #9a3412; }
                 .app-btn-orange:hover:not(:disabled) { background-color: #fed7aa; }
+                .app-btn-orange-blink { background-color: #feebc8; color: #c05621; animation: appBtnOrangeBlink 1.2s ease-in-out infinite; }
+                .app-btn-orange-blink:hover:not(:disabled) { background-color: #fbd38d; }
+                @keyframes appBtnOrangeBlink {
+                    0%, 100% { background-color: #feebc8; }
+                    50% { background-color: #fbd38d; }
+                }
                 .app-btn-yellow { background-color: #fef9c3; color: #854d0e; }
                 .app-btn-yellow:hover:not(:disabled) { background-color: #fef08a; }
                 .app-btn-close { background: transparent; color: #a0aec0; border-radius: 50%; width: 32px; height: 32px; padding: 0; font-size: 1.25rem; }

@@ -109,11 +109,14 @@
                 variant: 'app-btn-light',
                 onClick: () => window.ModalServices.abrirModalSolicitarAvaliacaoProfessor(item)
             }),
-            salvarLinkVideo: (item) => ({
-                label: item.urlVideoOficial ? 'Atualizar Link do Vídeo' : 'Salvar Link do Vídeo',
-                variant: 'app-btn-light',
-                onClick: () => window.ModalServices.abrirModalSalvarVideo(item)
-            }),
+            salvarLinkVideo: (item) => {
+                const possuiLink = Boolean(String(item.urlVideoOficial || '').trim());
+                return {
+                    label: possuiLink ? 'Atualizar Link do Vídeo' : 'Salvar Link do Vídeo',
+                    variant: possuiLink ? 'app-btn-light' : 'app-btn-orange-blink',
+                    onClick: () => window.ModalServices.abrirModalSalvarVideo(item)
+                };
+            },
             aprovarTicket: (item) => ({
                 label: 'Aprovar Ticket',
                 variant: 'app-btn-success',

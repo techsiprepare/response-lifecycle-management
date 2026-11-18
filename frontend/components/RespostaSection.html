@@ -15,6 +15,11 @@
         .tab-item.active { color: #2c3e50; background-color: #e1e8ed; }
         .tab-count { background-color: #f0f4f8; color: #3d4a57; font-size: 0.7rem; padding: 2px 6px; border-radius: 100px; }
         .tab-item.active .tab-count { background-color: #ffffff; }
+        .tab-alert-dot { width: 7px; height: 7px; border-radius: 50%; background-color: #c05621; flex-shrink: 0; animation: tabAlertBlink 1.2s ease-in-out infinite; }
+        @keyframes tabAlertBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.25; }
+        }
       `;
       document.head.appendChild(style);
     }
@@ -32,6 +37,8 @@
 
     // 2. ESTRUTURA TEMPLATE / HTML
     function getTabsHTML(respostas, filtroAtual) {
+      const mostrarAlertaAprovado = temAprovadoSemVideo(respostas);
+
       return `
         <div class="tabs-container">
           <div class="tabs-list">
@@ -39,6 +46,9 @@
             ${TABS_CONFIG.map(tab => {
         const count = calcularContadorStatus(respostas, tab.status);
         const isActive = filtroAtual === tab.status ? 'active' : '';
+        const alertDotHtml = tab.status === 'Aprovado' && mostrarAlertaAprovado
+          ? '<span class="tab-alert-dot" title="Há itens aprovados sem vídeo publicado"></span>'
+          : '';
 
         return `
                 <button 
@@ -46,6 +56,7 @@
                   onclick="window.RespostaSection.setFiltro('${tab.status}')">
                   ${tab.label}
                   <span class="tab-count">${count}</span>
+                  ${alertDotHtml}
                 </button>
               `;
       }).join('')}
@@ -93,6 +104,10 @@
       }
       return respostas.filter(r => r.status === status).length;
     };
+
+    function temAprovadoSemVideo(respostas) {
+      return respostas.some(r => r.status === 'Aprovado' && !String(r.urlVideoOficial || '').trim());
+    }
 
     window.RespostaSection.abrirRepositorio = function () {
       google.script.run

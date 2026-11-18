@@ -36,11 +36,15 @@
       const statusText = resposta.status || 'Pendente';
       const statusClass = getStatusClass(resposta.status);
       const provaQuestao = formatarProvaQuestao(resposta.idProva, resposta.questaoNum);
+      const naoPublicadoBadge = resposta.status === 'Aprovado' && !String(resposta.urlVideoOficial || '').trim()
+        ? '<span class="badge badge-nao-publicado">Vídeo Não Publicado</span>'
+        : '';
 
       return `
         <div class="ticket-row" id="item-${resposta.ticket}" onclick="window.RespostaItem.handleClick('${resposta.ticket}')">
           <div class="cell cell-status-group">
             <span class="badge ${statusClass}">${statusText}</span>
+            ${naoPublicadoBadge}
           </div>
           <span class="cell"><strong>${resposta.ticket || '-'}</strong></span>
           <span class="cell">${resposta.nomeCompleto || '-'}</span>
